@@ -43,6 +43,89 @@ CREATE TABLE IF NOT EXISTS macro (
 );
 CREATE INDEX IF NOT EXISTS ix_macro_date ON macro(date);
 
+-- Corporate actions with ex-dates. Needed because Yahoo's adjusted close does
+-- not correct for demergers: VEDL shows a -65% "return" on its 2026-04-30
+-- demerger ex-date, identical in `close` and `adj_close`. Left uncorrected
+-- that single row would corrupt a label and pollute 60 sessions of trailing
+-- volatility.
+CREATE TABLE IF NOT EXISTS corporate_actions (
+    symbol      TEXT    NOT NULL,
+    ex_date     TEXT    NOT NULL,
+    subject     TEXT,
+    kind        TEXT,                   -- structural | dividend | meeting | other
+    source      TEXT    NOT NULL,
+    ingested_at TEXT    NOT NULL,
+    PRIMARY KEY (symbol, ex_date, subject)
+);
+CREATE INDEX IF NOT EXISTS ix_ca_symbol ON corporate_actions(symbol, ex_date);
+
+-- Price-series breaks that are capital-structure changes rather than returns.
+CREATE TABLE IF NOT EXISTS price_breaks (
+    symbol      TEXT    NOT NULL,
+    date        TEXT    NOT NULL,
+    ret         REAL,
+    implied_ratio REAL,
+    reason      TEXT,
+    confirmed_by TEXT,
+    created_at  TEXT    NOT NULL,
+    PRIMARY KEY (symbol, date)
+);
+
+-- Corporate filings from the NSE announcements API. The backbone of the
+-- evidence layer: authoritative, precisely timestamped, categorised, and each
+-- row carries the URL of the actual filing so any claim can be checked.
+CREATE TABLE IF NOT EXISTS announcements (
+    seq_id      TEXT    NOT NULL PRIMARY KEY,
+    symbol      TEXT    NOT NULL,
+    announced_at TEXT   NOT NULL,       -- ISO datetime, IST
+    date        TEXT    NOT NULL,       -- trading date the filing can first act on
+    category    TEXT,
+    body        TEXT,
+    attachment  TEXT,                   -- source URL, for traceability
+    industry    TEXT,
+    after_close INTEGER NOT NULL,       -- 1 if filed at/after 15:30 IST
+    source      TEXT    NOT NULL,
+    ingested_at TEXT    NOT NULL
+);
+CREATE INDEX IF NOT EXISTS ix_ann_symbol_date ON announcements(symbol, date);
+
+-- Headlines with FinBERT sentiment. Forward-looking only: RSS exposes a few
+-- days of history at most, so unlike `announcements` this table cannot be
+-- backfilled and grows from the day ingest starts.
+CREATE TABLE IF NOT EXISTS news (
+    url_hash    TEXT    NOT NULL PRIMARY KEY,
+    symbol      TEXT,                   -- NULL for market-wide items
+    published_at TEXT   NOT NULL,
+    date        TEXT    NOT NULL,
+    headline    TEXT    NOT NULL,
+    summary     TEXT,
+    outlet      TEXT,
+    url         TEXT,
+    finbert_label TEXT,
+    finbert_score REAL,                 -- signed: positive minus negative
+    source      TEXT    NOT NULL,
+    ingested_at TEXT    NOT NULL
+);
+CREATE INDEX IF NOT EXISTS ix_news_symbol_date ON news(symbol, date);
+
+-- Significant moves matched to the event most likely to explain them.
+CREATE TABLE IF NOT EXISTS attributions (
+    symbol      TEXT    NOT NULL,
+    date        TEXT    NOT NULL,
+    ret         REAL,                   -- absolute log return
+    ret_rel     REAL,                   -- return net of the cross-sectional median
+    sigma       REAL,                   -- move size in trailing standard deviations
+    market_wide INTEGER,
+    kind        TEXT,                   -- announcement | driver | unexplained
+    evidence_id TEXT,                   -- announcements.seq_id or a driver key
+    headline    TEXT,
+    source_url  TEXT,
+    confidence  REAL,
+    rationale   TEXT,
+    created_at  TEXT    NOT NULL,
+    PRIMARY KEY (symbol, date)
+);
+
 -- One row per (walk-forward run, fold, model). The permanent record of every
 -- number this project has ever reported.
 CREATE TABLE IF NOT EXISTS wf_metrics (

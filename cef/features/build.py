@@ -17,6 +17,7 @@ import numpy as np
 import pandas as pd
 
 from cef.db import read_macro, read_ohlcv
+from cef.features.breaks import detect_breaks
 from cef.features.cross_sectional import cross_sectional_features
 from cef.features.macro import macro_features
 from cef.features.technical import technical_features
@@ -121,11 +122,71 @@ def _regimes(feat: pd.DataFrame) -> pd.DataFrame:
     }, index=f.index)
 
 
+def _rebase_price_breaks(oh: pd.DataFrame) -> tuple[pd.DataFrame, set]:
+    """Make the price series continuous across capital-structure ex-dates.
+
+    Blanking the ex-date is not enough. Every trailing statistic denominated in
+    rupees keeps its pre-event scale while the price does not, so the ratios
+    built from them are wrong long after the gap: masking VEDL's demerger left
+    ATR at pre-demerger rupee levels divided by a post-demerger price, and
+    ``atr_pct`` jumped from 0.034 to 0.089 - a fabricated volatility regime
+    lasting weeks.
+
+    So the series is rebased instead. All prices strictly before a break are
+    multiplied by (post / pre), which is the standard adjustment-factor
+    treatment: the discontinuity disappears, every within-regime price
+    relationship is preserved, and rolling windows can span the event without
+    picking up a jump. Breaks are applied newest-first so that a symbol with
+    several of them compounds correctly.
+
+    The ex-date's own label is still discarded - the series is continuous now,
+    but no holder earned that session's "return", so it must not be trained on.
+    """
+    from cef.db import connect
+
+    try:
+        with connect() as conn:
+            actions = pd.read_sql(
+                "SELECT symbol, ex_date, subject, kind FROM corporate_actions", conn)
+    except Exception:                                    # noqa: BLE001
+        actions = pd.DataFrame()
+
+    breaks = detect_breaks(oh, actions if not actions.empty else None)
+    if breaks.empty:
+        log.info("no capital-structure breaks detected")
+        return oh, set()
+
+    oh = oh.sort_values(["symbol", "date"]).copy()
+    price_cols = ["open", "high", "low", "close", "adj_close"]
+    break_keys = set()
+
+    for b in breaks.sort_values("date", ascending=False).itertuples(index=False):
+        d = pd.Timestamp(b.date)
+        rows = oh[oh["symbol"] == b.symbol]
+        at = rows[rows["date"] == d]
+        prev = rows[rows["date"] < d]
+        if at.empty or prev.empty:
+            continue
+        post = float(at["close"].iloc[0])
+        pre = float(prev["close"].iloc[-1])
+        if not (np.isfinite(post) and np.isfinite(pre)) or pre <= 0:
+            continue
+        factor = post / pre
+        mask = (oh["symbol"] == b.symbol) & (oh["date"] < d)
+        oh.loc[mask, price_cols] = oh.loc[mask, price_cols] * factor
+        break_keys.add((b.symbol, b.date))
+        log.info("rebased %s before %s by x%.4f  (%s)",
+                 b.symbol, b.date, factor, str(b.reason)[:60])
+
+    return oh, break_keys
+
+
 def build_panel(symbols: list[str] | None = None) -> pd.DataFrame:
     """Assemble the modelling panel: one row per (symbol, session)."""
     oh = read_ohlcv(symbols)
     if oh.empty:
         raise RuntimeError("ohlcv table is empty - run scripts/ingest.py first")
+    oh, break_keys = _rebase_price_breaks(oh)
 
     days = pd.DatetimeIndex(sorted(oh["date"].unique()))
     macro_wide = read_macro()
@@ -166,6 +227,13 @@ def build_panel(symbols: list[str] | None = None) -> pd.DataFrame:
     before = len(panel)
     panel = panel.sort_values(["symbol", "date"])
     panel = panel[panel.groupby("symbol", observed=True).cumcount() >= WARMUP_ROWS]
+    # The ex-date session is continuous in price now but is still not a
+    # tradeable return, so its label is dropped.
+    if break_keys:
+        ds = panel["date"].dt.strftime("%Y-%m-%d")
+        is_break = pd.Series(list(zip(panel["symbol"], ds)), index=panel.index).isin(break_keys)
+        panel = panel[~is_break]
+        log.info("dropped %d capital-structure ex-date rows", int(is_break.sum()))
     panel = panel[panel["y_dir"].notna()]
     log.info("trimmed %d -> %d rows (warmup %d/symbol + undefined labels)",
              before, len(panel), WARMUP_ROWS)

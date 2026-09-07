@@ -12,29 +12,33 @@ correctness, honest validation and calibrated confidence — not alpha.
 
 ---
 
-## Headline result — M1
+## Headline result — M1 (modelling)
 
 Held-out folds (2024-03 → 2026-08), never read during development:
 
 | | accuracy | edge vs baseline | fold t-stat | folds won | AUC |
 |---|---|---|---|---|---|
-| LightGBM + isotonic | **50.91%** | **+0.90 pp** | 2.41 | 5/5 | 0.512 |
-| Logistic + isotonic | 51.02% | +1.02 pp | 2.35 | 4/5 | 0.513 |
-| 1-day reversal rule | 50.92% | +0.91 pp | 2.81 | 5/5 | 0.509 |
+| LightGBM (raw) | **51.02%** | **+1.01 pp** | 3.01 | 5/5 | 0.515 |
+| LightGBM + isotonic | 51.03% | +1.02 pp | 2.65 | 5/5 | 0.514 |
+| Logistic + isotonic | 51.00% | +0.99 pp | 2.25 | 4/5 | 0.510 |
+| 1-day reversal rule | 50.91% | +0.90 pp | 2.81 | 5/5 | 0.509 |
 | Coin flip / always-up | 50.01% | — | — | — | — |
 
 Under selective prediction — forecasting only when conviction is high:
 
 | coverage | accuracy | edge vs baseline on the same rows | t-stat | folds won |
 |---|---|---|---|---|
-| 10% | **53.48%** | +2.24 pp | 1.37 | 4/5 |
-| 30% | 51.74% | +1.70 pp | 2.24 | 4/5 |
-| 50% | 51.40% | +1.43 pp | 2.02 | 5/5 |
-| 100% | 50.93% | +0.91 pp | 2.26 | 5/5 |
+| 5% | **54.80%** | +0.76 pp | 0.97 | 3/5 |
+| 10% | 53.62% | +1.64 pp | 1.27 | 3/5 |
+| 20% | 52.52% | +1.91 pp | 1.65 | 4/5 |
+| 50% | 51.80% | +1.72 pp | 2.03 | 4/5 |
+| 100% | 51.04% | +1.02 pp | 3.42 | 5/5 |
 
-Calibration, held-out: **ECE 0.69 pp pooled**, 1.78 pp as a per-fold mean.
+Calibration, held-out: **ECE 0.69 pp pooled**, 1.88 pp as a per-fold mean.
 The reliability curve sits within about one percentage point of the diagonal
-across the range the model actually uses.
+across the range the model actually uses. Predicted probabilities span roughly
+0.46 to 0.53 — the model never claims high confidence, which is the intended
+behaviour and constrains what the interface is allowed to show.
 
 **Read this next to the numbers above:** a 200-feature gradient-boosted model
 is matched on raw accuracy by a two-parameter reversal rule. That is the
@@ -114,6 +118,135 @@ keep it and a poor reason to claim it beat the baseline.
 
 ---
 
+## Headline result — M2 (evidence and attribution)
+
+Every significant price move is matched, where possible, to a dated corporate
+filing or a mapped market driver, and each match carries the source document.
+
+Corpus: **69,747 NSE corporate filings** across all 52 symbols, 2018–2026,
+plus corporate-action ex-dates.
+
+| | share of 7,769 significant moves (≥2σ) |
+|---|---|
+| Explained by a corporate filing | **24.3%** |
+| Explained by a mapped driver | 13.6% |
+| **Left explicitly unexplained** | **62.1%** |
+
+That last row is the point. Widening the search window until everything has a
+story is trivially easy, and the measurements say exactly how easy: the share
+of moves with *any* filing nearby runs 47.8% at zero lookback, 65.4% at one
+session and 80.7% at three. A system reporting "81% explained" would be citing
+lost share certificates and analyst-meet notices. The materiality gate is what
+makes the 24.3% mean something, and an unexplained move is reported as
+unexplained rather than given a plausible cause.
+
+### Five things the evidence layer turned up
+
+**1. Two thirds of corporate filings arrive after the close.** Of 69,747
+filings, 46,260 (66.3%) are timestamped at or after 15:30 IST. Their first
+tradeable session is the *next* one. Attribution that matches filings to the
+calendar day they were filed therefore misattributes two filings in every
+three, so `announcements.date` is resolved at ingest to the first session the
+filing could act on — rolling a Friday-evening release to Monday using the
+trading calendar.
+
+**2. The exchange's own category field is unreliable for the events that
+matter most.** IndusInd Bank's accounting-discrepancy disclosure — a 27%
+single-session fall, the largest idiosyncratic move in the panel — was filed
+under "General Updates", a category that is otherwise almost entirely
+administrative. No category-based materiality gate can catch that, and one
+loose enough to admit "General Updates" would admit everything.
+
+The fix is to escalate materiality from the body text, and the strongest single
+cue is a reference to **Regulation 30 of SEBI's Listing Obligations and
+Disclosure Requirements** — the rule that *defines* a material event and
+compels its disclosure. A filing citing it has already been judged material by
+the issuer's own compliance officer, which is better evidence than a free-text
+category. This recovered the IndusInd disclosure and, in total, **513
+attributions (27% of all filing-based matches) come from filings the exchange
+had categorised as generic.**
+
+**3. Yahoo's adjusted close does not correct for demergers.** VEDL's
+2026-04-30 demerger appears as a −65% single-session return, byte-identical in
+`close` and `adj_close`, because value left the entity rather than the share
+being subdivided. TRENT's 2026-01-01 session shows a ratio of 0.670 — 2/3 to
+within half a percent, an unadjusted 1:2 bonus.
+
+Three such breaks exist in 109,105 rows, and fixing them mattered more than the
+count suggests. Masking alone was not enough: every trailing statistic
+denominated in rupees kept its pre-event scale while the price did not, so
+`atr_pct` jumped from 0.034 to 0.089 and stayed there for weeks — a fabricated
+volatility regime. Rebasing the series across each break removed it. **The
+correction moved held-out accuracy by only +0.15 pp but lifted the fold
+t-statistic from 1.88 to 3.01**, because the spurious rows were contributing
+variance rather than bias.
+
+**4. Deciding which breaks to mask is where this could have gone badly wrong.**
+An early version of the detector matched any price ratio near a simple
+fraction with a denominator up to ten. That set, widened by a tolerance, very
+nearly covers the whole interval below 1 — 5/7 is 0.714, 7/9 is 0.778 — so it
+masked the Adani selloff of February 2023 as a "split" and would have silently
+deleted the largest genuine event in the panel. Unanchored numerology is not
+evidence. Detection is now anchored to exchange records: a structural corporate
+action within three sessions, or a ratio matching the one a *recorded* action
+must produce. What survives is checked as explicitly as what is masked —
+2020-03-23, the Adani selloff and the IndusInd disclosure are all still there.
+
+**5. FinBERT is excellent at tone and useless at market structure.** Scored
+against a hand-labelled probe set of the *directional implication for the named
+stock* (`tests/fixtures/sentiment_probe.py`), it gets 12/20 overall — but the
+breakdown is the finding:
+
+| reasoning required | FinBERT |
+|---|---|
+| Plain tone (sentiment and direction agree) | 6/6 |
+| Governance | 2/2 |
+| Commodity linkage | 2/4 |
+| Policy | 1/2 |
+| Shareholder returns | 1/2 |
+| **Market structure (stake sales, buybacks, pledges)** | **0/4** |
+
+All four market-structure headlines score below 0.15 and collapse to neutral:
+it reads a government stake sale and a share buyback as equally uninformative.
+Three outright sign flips, the worst being *"Silver eased as a
+stronger-than-expected jobs report lifted Treasury yields"* → **+0.71
+positive**, for a company whose earnings depend on silver.
+
+So the architecture follows the measurement rather than the plan. FinBERT
+scores headline tone, where it is perfect and free. Commodity and macro
+direction comes from **prices**, never from text — silver's direction is a fact
+about silver, not a reading of a sentence about it. And the market-structure
+class, where FinBERT scores zero, is handled by a deterministic map over
+exchange filing categories, which is exact and auditable.
+
+### Narration
+
+Plain-language output is generated by `gpt-5-mini` and is confined to
+rewriting: it receives only the structured evidence the pipeline computed, and
+never forecasts, computes or ranks. The boundary is enforced rather than
+requested — the prompt carries nothing but the evidence, the system prompt caps
+the certainty of the language against the confidence figure, and
+`verify_narration` scans the output for numbers absent from the input.
+
+The verifier tolerates honest paraphrase (a stored 0.5102 may appear as
+"about 51%") and still catches fabrication:
+
+| narration | verdict |
+|---|---|
+| "Confidence is 51.2%, past accuracy about 51%" | clean |
+| "The model sees this reaching Rs 640" | flagged: 640 |
+| "The model is right 74% of the time" | flagged: 74 |
+| "It sits 23% below its 52-week high" | flagged: 23, 52 |
+
+Two revisions came out of running it. Raw SHAP contributions (~0.02 in
+log-odds) were quoted verbatim as *"contributing 0.02205, with
+share_of_signal 0.678"*, so aspects are now also expressed as integer points
+scaled to the largest contribution — ordinal, and readable. And the verifier
+initially flagged its own correct output, because language models write minus
+signs as U+2212 rather than an ASCII hyphen.
+
+---
+
 ## Why the numbers are believable
 
 Every result above rests on the validation design, so that is where the effort
@@ -177,28 +310,47 @@ python -m pytest tests/ -v
 - **13 folds is a small sample** for fold-level t-statistics. They test whether
   an edge recurs across regimes, which is the right question, but they are a
   blunt instrument.
-- **Not yet built:** the flow (FII/DII), sentiment and fundamentals analyzers,
-  the evidence/attribution layer, the delayed-reward bandit, and the interface.
+- **News has no history.** Attribution over 2018–2026 uses corporate filings
+  and driver moves. Headline sentiment only accumulates from the day ingest
+  first runs.
+- **Attribution is correlational.** A high confidence means a material,
+  correctly-timed, directionally-consistent filing was found — not that it
+  caused the move. External events leave no filing at all: the Adani selloff of
+  February 2023 was a short-seller report, so the system correctly reports it
+  as unexplained.
+- **Not yet built:** the flow (FII/DII) and fundamentals analyzers, the
+  delayed-reward bandit, and the interface.
 
 ---
 
 ## Architecture
 
 ```
-scripts/ingest.py          yfinance -> SQLite    (109k OHLCV rows, 19 macro series)
-scripts/build_features.py  -> panel.parquet      (98,653 rows x 200 features)
-scripts/tune.py            search, tune folds only
-scripts/report.py          held-out assessment + reliability diagram
+scripts/ingest.py           yfinance -> SQLite   (109k OHLCV rows, 19 macro series)
+scripts/ingest_evidence.py  NSE filings + news   (69,747 filings, 2018-2026)
+scripts/build_features.py   -> panel.parquet     (98,651 rows x 200 features)
+scripts/tune.py             search, tune folds only
+scripts/report.py           held-out assessment + reliability diagram
+scripts/attribute.py        significant moves -> evidence
+scripts/forecast.py         one symbol: call, aspects, evidence, narration
 
 cef/
   universe.py              52 symbols, sector map, macro series + availability lags
   db.py                    SQLite schema and I/O
-  ingest/                  equities, macro
+  ingest/                  equities, macro, announcements, corporate_actions, news
   features/
     technical.py           81 features, hand-written, trailing windows only
     macro.py               92 features, lag enforcement lives here
     cross_sectional.py     27 features, relative strength / beta / driver linkage
-    build.py               panel assembly and every target definition
+    breaks.py              capital-structure break detection, exchange-anchored
+    build.py               panel assembly, rebasing, every target definition
+  evidence/
+    event_map.py           filing materiality + direction priors
+    moves.py               significant-move detection
+    attribution.py         move -> filing or driver, with sources
+    aspects.py             SHAP -> seven reader-facing buckets
+    sentiment.py           FinBERT headline scoring
+    narrate.py             OpenAI rewriting, with a hallucination verifier
   models/
     baselines.py           always-up, random, persistence, mean-reversion
     direction.py           LightGBM and logistic heads
@@ -208,7 +360,8 @@ cef/
     walk_forward.py        fold generation, embargo, three-way split
     selective.py           accuracy-vs-coverage with two comparators
     runner.py              the experiment loop; enforces tune/holdout separation
-tests/test_no_leakage.py   15 tests
+tests/test_no_leakage.py   15 leakage tests
+tests/test_evidence.py     30 evidence-layer tests
 ```
 
 Technical indicators are hand-written rather than taken from TA-Lib or
@@ -237,10 +390,13 @@ that scikit-learn already vendors into LightGBM's lib directory, adds an
 installing Homebrew.
 
 ```bash
-.venv/bin/python scripts/ingest.py           # ~15s
-.venv/bin/python scripts/build_features.py   # ~5s
-.venv/bin/python -m pytest tests/ -v         # ~3s
-.venv/bin/python scripts/report.py --split holdout
+.venv/bin/python scripts/ingest.py                        # ~15s
+.venv/bin/python scripts/ingest_evidence.py               # ~25 min (NSE throttles)
+.venv/bin/python scripts/build_features.py                # ~5s
+.venv/bin/python -m pytest tests/ -v                      # ~10s, 45 tests
+.venv/bin/python scripts/report.py --split holdout        # the held-out number
+.venv/bin/python scripts/attribute.py --sigma 2.0         # move attribution
+.venv/bin/python scripts/forecast.py HINDZINC             # one full forecast
 ```
 
 ### Data sources
@@ -249,8 +405,22 @@ installing Homebrew.
 |---|---|---|
 | OHLCV, 52 NSE symbols | yfinance (`.NS`) | none |
 | Global indices, FX, commodities, rates | yfinance | none |
+| Corporate filings, corporate actions | NSE APIs | none (browser UA + cookie handshake) |
+| Headlines | 6 RSS feeds + per-ticker Yahoo | none |
+| Headline sentiment | FinBERT, local | none |
 | US macro releases | FRED | free, `.env` |
-| Narration (M2) | OpenAI API (`gpt-5-mini`) | `.env` |
+| Narration | OpenAI (`gpt-5-mini`) | `.env` |
+
+Two source notes worth recording. The NSE endpoints require a *browser*
+User-Agent and a cookie handshake, and return 403 without them — which is the
+opposite of several other financial APIs that reject browser agents, so the
+headers are a deliberate per-source choice rather than copied boilerplate. And
+news is **forward-only**: Indian financial RSS exposes one to three days of
+history, and GDELT — the obvious free archive — rate-limits to roughly one
+request every five seconds with loose entity matching, so a multi-year backfill
+across 52 symbols is neither fast nor accurate. Historical attribution
+therefore rests on corporate filings and driver moves, which do have full
+history.
 
 ---
 
@@ -258,13 +428,15 @@ installing Homebrew.
 
 - **M1 — the honest number.** ✅ Ingest, point-in-time features, baselines,
   walk-forward with embargo, calibration, leak suite, held-out report.
-- **M2 — evidence and attribution.** Move attribution against news, driver
-  linkage, source-traceable evidence, plain-language narration.
+- **M2 — evidence and attribution.** ✅ NSE filings corpus, causal filing
+  timestamps, materiality gating, move attribution with sources, driver
+  linkage, SHAP-to-aspect bucketing, verified narration.
 - **M3 — interface and feedback loop.** Typeform-style UI, prediction
   persistence, nightly resolver, delayed-reward Thompson-sampling bandit over
   ensemble members.
 
-M1's result shapes M2 and M3 directly: with a maximum model confidence of
-about 53%, the interface can never show a bold directional arrow, and
-"no useful opinion today" has to be a first-class state rather than an edge
-case.
+M1 and M2 constrain M3 directly. Model confidence never exceeds about 53%, so
+the interface can never show a bold directional arrow and "no useful opinion
+today" has to be a first-class state rather than an edge case. And since 62%
+of significant moves have no identifiable cause, "we don't know why this moved"
+needs to be a designed state too, not an empty panel.
