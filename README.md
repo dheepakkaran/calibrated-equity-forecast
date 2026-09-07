@@ -1,6 +1,6 @@
-# Calibrated Directional Forecasting with Delayed-Reward Ensemble Reweighting
+# Calibrated Selective Prediction for Next-Session Equity Direction
 
-### An Evidence-Grounded System for NSE Equities
+### Evidence from the NSE
 
 Next-session directional forecasting for Indian equities, built so that the
 reported accuracy can be trusted. The engineering claim is point-in-time

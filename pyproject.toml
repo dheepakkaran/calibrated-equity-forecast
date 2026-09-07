@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "calibrated-equity-forecast"
 version = "0.1.0"
-description = "Calibrated directional forecasting with delayed-reward ensemble reweighting for NSE equities"
+description = "Calibrated selective prediction for next-session equity direction: evidence from the NSE"
 requires-python = ">=3.10"
 
 [tool.setuptools.packages.find]
