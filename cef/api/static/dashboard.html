@@ -30,7 +30,8 @@
         <div class="ta" id="ta"></div>
       </div>
       <div class="navtabs" id="tabs">
-        <div class="on" data-tab="forecast">Forecast</div>
+        <div class="on" data-tab="simple">Simple</div>
+        <div data-tab="forecast">Forecast</div>
         <div data-tab="context">Context</div>
         <div data-tab="compare">Compare</div>
         <div data-tab="history">History</div>
@@ -41,8 +42,43 @@
     <!-- macro board -->
     <div class="board" id="board"></div>
 
+    <!-- ═══════════════ SIMPLE ═══════════════ -->
+    <section class="tab is-on" data-panel="simple">
+      <div class="bar" id="simplebar"></div>
+      <div class="simplepad">
+
+        <div class="answer" id="s-answer"></div>
+
+        <div class="sect">
+          <div class="secthead">How the score added up</div>
+          <div class="sectsub" id="s-tallysub">—</div>
+          <div class="tally" id="s-tally"></div>
+          <div id="s-reasons"></div>
+        </div>
+
+        <div class="means" id="s-means"></div>
+
+        <div class="sect">
+          <div class="secthead">What to watch tomorrow</div>
+          <div class="sectsub">Three prices worth knowing, if you plan to follow along.</div>
+          <div class="levels" id="s-levels"></div>
+        </div>
+
+        <div class="closing" id="s-closing"></div>
+
+        <div class="jargon">
+          <b>Want the technical version?</b> Charts, model weights, SHAP
+          attributions and the full track record are on the other tabs.
+          <u data-goto="forecast">Open Forecast →</u>
+        </div>
+
+        <div class="disc" id="s-disc"></div>
+        <div class="genfoot" id="s-genfoot"></div>
+      </div>
+    </section>
+
     <!-- ═══════════════ FORECAST ═══════════════ -->
-    <section class="tab is-on" data-panel="forecast">
+    <section class="tab" data-panel="forecast">
       <div class="bar" id="symbar"></div>
 
       <div class="grid-main">

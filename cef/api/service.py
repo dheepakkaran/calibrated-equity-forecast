@@ -226,6 +226,24 @@ def _attribution_summary(symbol: str, limit: int = 3) -> dict:
     }
 
 
+def simple_for(symbol: str, prefer: str = "gemini") -> dict:
+    """The plain-language view. Cached per symbol per session, since the
+    evidence is fixed once the session closes and one generation can serve
+    every reader that day."""
+    from cef.api import dashboard as dash
+    from cef.evidence.simple import generate
+
+    f = forecast(symbol)
+    return generate(
+        forecast=f,
+        attribution=attribution_for(symbol, 6),
+        drivers=dash.driver_linkage(symbol),
+        levels=dash.key_levels(symbol),
+        coverage=dash.source_coverage(symbol),
+        prefer=prefer,
+    )
+
+
 def narration_for(symbol: str) -> dict:
     from cef.evidence.narrate import build_evidence, narrate
 

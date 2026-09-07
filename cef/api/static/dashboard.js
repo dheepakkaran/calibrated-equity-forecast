@@ -20,7 +20,8 @@ const pct = (n, d = 2) => (n === null || n === undefined) ? '—' : `${n > 0 ? '
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
-const S = { symbol: 'HINDZINC', data: null, perf: null, bandit: null, tab: 'forecast' };
+const S = { symbol: 'HINDZINC', data: null, perf: null, bandit: null,
+            simple: null, tab: 'simple' };
 
 /* ── SVG helpers ─────────────────────────────────────────────────── */
 function lineChart({ points, width = 700, height = 210, pad = 34, levels = [], markers = [] }) {
@@ -283,6 +284,129 @@ async function loadNarration() {
   }
 }
 
+/* ── simple tab ──────────────────────────────────────────────────── */
+async function renderSimple() {
+  const d = S.data;
+  if (!d) return;
+  const f = d.forecast;
+  const sym = S.symbol;
+
+  $('#simplebar').innerHTML = `<div class="sym">Simple view</div>
+    <div class="co">${esc(f.symbol)} · for the session after ${esc(f.as_of)} —
+      same forecast, same evidence, no jargon</div>`;
+
+  if (S.simple?.forSymbol !== sym) {
+    $('#s-answer').innerHTML = '<div class="micro">Writing the plain-language version…</div>';
+    ['#s-tally', '#s-reasons', '#s-levels'].forEach((k) => { $(k).innerHTML = ''; });
+    ['#s-means', '#s-closing', '#s-genfoot'].forEach((k) => { $(k).innerHTML = ''; });
+    try {
+      const r = await fetch(`/api/simple/${encodeURIComponent(sym)}`);
+      if (!r.ok) throw new Error((await r.json()).detail || 'unavailable');
+      const j = await r.json();
+      j.forSymbol = sym;
+      S.simple = j;
+    } catch (e) {
+      $('#s-answer').innerHTML = `<div class="micro">The plain-language view could not be
+        written — ${esc(e.message)}. Set GEMINI_API_KEY (free tier) or OPENAI_API_KEY
+        in .env. Every other tab works without it.</div>`;
+      return;
+    }
+  }
+  if (S.symbol !== sym) return;            // a newer symbol won the race
+
+  const v = S.simple;
+  const ev = v.evidence || {};
+  const abstain = !f.acted;
+  const up = f.proba_outperform > 0.5;
+  const dirCls = abstain ? 'none' : up ? 'up' : 'dn';
+
+  // The verdict phrase inside the headline is highlighted rather than the whole
+  // sentence, so the colour marks the claim and not the framing around it.
+  //
+  // The direction words are matched whichever way the forecast went, because
+  // an abstaining forecast still has a tilt and the model describes it - an
+  // earlier version only looked for abstention words, so a "no call" headline
+  // reading "more likely to do better" got no highlight at all. On an abstain
+  // the tilt is coloured amber rather than teal or rose, which is the whole
+  // point: it is a lean the system declined to act on, not a call.
+  const phrase = /(slightly more likely to [a-z ]*?(?:better|worse|beat|lag|rise|fall)[a-z]*|no useful opinion|not confident enough|do better than[a-z \-]*|do worse than[a-z \-]*|out-?perform\w*|under-?perform\w*|beat the pack|lag the pack)/i;
+  let headline = esc(v.headline);
+  const m = headline.match(phrase);
+  if (m) headline = headline.replace(m[0], `<em class="${dirCls}">${m[0]}</em>`);
+
+  $('#s-answer').innerHTML = `
+    <div class="who">${esc(f.symbol)} · ${esc(f.sector)} ·
+      <b>closed at ₹${fmt(f.last_close)}</b> on ${esc(f.as_of)}</div>
+    <div class="big">${headline}</div>
+    <p class="plain">${esc(v.opening)}</p>
+    <div class="sureline">
+      <div class="sureno ${abstain ? 'none' : ''}">${abstain ? 'no call' : (f.confidence * 100).toFixed(1) + '%'}</div>
+      <div class="suretext">${esc(v.confidence_line)}</div>
+    </div>`;
+
+  const t = ev.tally || {};
+  $('#s-tallysub').textContent = `${(v.reasons || []).length} things were checked. `
+    + 'Each one either pushed the price up or pulled it down.';
+  $('#s-tally').innerHTML = `
+    <div class="side up">
+      <div class="lbl">Points pushing it up</div>
+      <div class="pts p">+${t.points_pushing_up ?? 0}</div>
+      <div class="cnt">from ${t.checks_pushing_up ?? 0} of ${(v.reasons || []).length} checks</div>
+    </div>
+    <div class="side">
+      <div class="lbl">Points pulling it down</div>
+      <div class="pts n">${t.points_pulling_down ?? 0}</div>
+      <div class="cnt">from ${t.checks_pulling_down ?? 0} of ${(v.reasons || []).length} checks</div>
+    </div>`;
+
+  // Biggest movers first, so the argument reads in order of importance.
+  const evReasons = new Map((ev.reasons || []).map((r) => [r.aspect, r]));
+  const reasons = [...(v.reasons || [])].sort((a, b) => Math.abs(b.points) - Math.abs(a.points));
+  $('#s-reasons').innerHTML = reasons.map((r) => {
+    const p = r.points > 0;
+    const meta = evReasons.get(r.aspect);
+    const isRev = meta?.is_reversal;
+    const url = (r.source || '').match(/https?:\/\/\S+/);
+    const cite = r.source
+      ? (url ? `<a class="cite" href="${esc(url[0])}" target="_blank" rel="noopener">${esc(r.source.replace(url[0], '').trim() || 'Open the filing')}</a>`
+             : `<div class="cite">${esc(r.source)}</div>`)
+      : '';
+    return `<div class="reason-card ${p ? 'pos' : 'neg'}">
+      <div class="score"><div class="v ${p ? 'p' : 'n'}">${p ? '+' : ''}${r.points}</div>
+        <div class="u">points</div></div>
+      <div class="txt">
+        <h4>${esc(r.title)}</h4>
+        <p>${esc(r.body)}</p>
+        ${isRev ? '<span class="rev">reversal effect</span>' : ''}${cite}
+      </div></div>`;
+  }).join('');
+
+  const ex = v.explainer || {};
+  $('#s-means').innerHTML = `<h3>${esc(ex.question || '')}</h3>
+    ${(ex.paragraphs || []).map((x) => `<p>${esc(x)}</p>`).join('')}`;
+
+  const lvlCls = ['up', 'mid', 'dn'];
+  $('#s-levels').innerHTML = (v.levels || []).map((l, i) => `
+    <div class="lvl">
+      <div class="k">${esc(l.label)}</div>
+      <div class="n ${lvlCls[i] || 'mid'}">₹${fmt(l.price)}</div>
+      <div class="d">${esc(l.meaning)}</div>
+    </div>`).join('');
+
+  $('#s-closing').innerHTML = `<b>So, adding it up.</b> ${esc(v.closing)}`;
+  $('#s-disc').textContent = f.disclaimer;
+
+  const bad = (v.unverified_numbers || []).length;
+  $('#s-genfoot').innerHTML = `Every number above came from the model and the
+    exchange data, not from the language model — it receives the evidence already
+    computed and rewrites it in plain language, and is instructed never to add a
+    fact or sound more certain than the confidence allows. Written by
+    <b>${esc(v.provider)} · ${esc(v.model)}</b>${v.cached ? ' (cached for this session)' : ''}.
+    ${bad ? `<span class="warn">⚠ ${bad} number(s) could not be traced to the evidence:
+      ${esc((v.unverified_numbers || []).join(', '))}.</span>`
+      : 'Every number in the text was checked against that evidence and matched.'}`;
+}
+
 /* ── context tab ─────────────────────────────────────────────────── */
 function renderContext() {
   const d = S.data, f = d.forecast;
@@ -496,6 +620,7 @@ function switchTab(name) {
   S.tab = name;
   $$('#tabs div').forEach((d) => d.classList.toggle('on', d.dataset.tab === name));
   $$('.tab').forEach((t) => t.classList.toggle('is-on', t.dataset.panel === name));
+  if (name === 'simple') renderSimple();
   if (name === 'compare') renderCompare();
   if (name === 'history') renderHistory();
   if (name === 'performance') renderPerformance();
@@ -512,6 +637,7 @@ async function load(symbol) {
       return r.json();
     });
     renderForecast();
+    if (S.tab === 'simple') renderSimple();
     if (S.tab === 'context') renderContext();
     if (S.tab === 'history') renderHistory();
   } catch (e) {
@@ -555,6 +681,7 @@ $('#sym').addEventListener('keydown', (e) => {
 });
 
 $$('#tabs div').forEach((d) => d.addEventListener('click', () => switchTab(d.dataset.tab)));
+$$('[data-goto]').forEach((el) => el.addEventListener('click', () => switchTab(el.dataset.goto)));
 $('#cmp-metals').addEventListener('click', () => renderCompare('metals'));
 $('#cmp-it').addEventListener('click', () => renderCompare('it'));
 $('#cmp-bank').addEventListener('click', () => renderCompare('bank'));

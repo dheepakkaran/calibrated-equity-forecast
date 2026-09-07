@@ -71,6 +71,17 @@ def narration(symbol: str) -> dict:
         raise HTTPException(503, str(exc))
 
 
+@app.get("/api/simple/{symbol}")
+def simple(symbol: str, prefer: str = Query("gemini", pattern="^(gemini|openai)$")) -> dict:
+    """Plain-language view. Gemini first (free tier), OpenAI as fallback."""
+    try:
+        return service.simple_for(symbol, prefer)
+    except KeyError:
+        raise HTTPException(404, f"{symbol.upper()} is not in the universe")
+    except RuntimeError as exc:
+        raise HTTPException(503, str(exc))
+
+
 @app.get("/api/attribution/{symbol}")
 def attribution(symbol: str, limit: int = Query(8, le=40)) -> list[dict]:
     return service.attribution_for(symbol, limit)

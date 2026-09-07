@@ -300,3 +300,101 @@ svg{display:block;width:100%;height:auto}
   .navtabs{margin-left:0;flex-wrap:wrap}
   .searchwrap{width:100%;order:3}
 }
+
+
+/* ───────────────────────────────────────────────────────────────────
+   Simple view. Same forecast, same evidence, no jargon.
+
+   Wider line-height and larger type than the rest of the dashboard,
+   because this tab is read as prose rather than scanned as a panel.
+   The points sit in a fixed left gutter so a reader can run their eye
+   down the column and see the shape of the argument before reading a
+   word of it.
+   ─────────────────────────────────────────────────────────────────── */
+.simplepad{padding:26px 24px;max-width:1000px}
+.simplepad .sect{margin-bottom:26px}
+.secthead{font-size:17px;font-weight:600;margin-bottom:5px;letter-spacing:-.01em}
+.sectsub{font-size:13.5px;color:var(--ink-faint);margin-bottom:16px}
+
+.answer{background:var(--ground);border:1px solid var(--line);border-radius:9px;
+  padding:27px 26px;margin-bottom:26px}
+.answer .who{font-size:13px;color:var(--ink-faint);margin-bottom:14px}
+.answer .who b{color:var(--ink-dim);font-weight:500}
+.answer .big{font-size:24px;font-weight:600;letter-spacing:-.02em;
+  line-height:1.36;margin-bottom:14px}
+.answer .big em{font-style:normal}
+.answer .big em.dn{color:var(--bear)}
+.answer .big em.up{color:var(--bull)}
+.answer .big em.none{color:var(--warn)}
+.answer .plain{font-size:15px;color:var(--ink-dim);line-height:1.68;max-width:68ch}
+.sureline{margin-top:22px;padding-top:20px;border-top:1px solid var(--line-soft);
+  display:flex;align-items:center;gap:22px;flex-wrap:wrap}
+.sureno{font-size:38px;font-weight:600;color:var(--warn);letter-spacing:-.03em;line-height:1}
+.sureno.none{color:var(--ink-faint);font-size:30px}
+.suretext{font-size:14px;color:var(--ink-dim);max-width:50ch;line-height:1.6}
+
+.tally{display:flex;border:1px solid var(--line);border-radius:9px;
+  overflow:hidden;margin-bottom:20px}
+.tally .side{flex:1;padding:17px 20px;background:var(--ground)}
+.tally .side.up{border-right:1px solid var(--line)}
+.tally .lbl{font-size:13px;color:var(--ink-dim);margin-bottom:6px}
+.tally .pts{font-size:31px;font-weight:600;letter-spacing:-.02em;line-height:1}
+.tally .pts.p{color:var(--bull)} .tally .pts.n{color:var(--bear)}
+.tally .cnt{font-size:12.5px;color:var(--ink-faint);margin-top:5px}
+
+.reason-card{background:var(--ground);border:1px solid var(--line);border-radius:8px;
+  padding:17px 19px;margin-bottom:11px;display:flex;gap:17px;align-items:flex-start}
+.reason-card.pos{border-left:3px solid var(--bull)}
+.reason-card.neg{border-left:3px solid var(--bear)}
+.reason-card .score{min-width:56px;text-align:center;padding-top:2px}
+.reason-card .score .v{font-size:19px;font-weight:600;line-height:1;
+  font-variant-numeric:tabular-nums}
+.reason-card .score .v.p{color:var(--bull)} .reason-card .score .v.n{color:var(--bear)}
+.reason-card .score .u{font-size:10.5px;color:var(--ink-faint);margin-top:3px}
+.reason-card .txt{flex:1;min-width:0}
+.reason-card h4{font-size:14.5px;font-weight:600;margin-bottom:6px;line-height:1.4}
+.reason-card p{font-size:13.5px;color:var(--ink-dim);line-height:1.68}
+.reason-card .cite{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;
+  color:var(--info);margin-top:9px;text-decoration:none}
+.reason-card .cite::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--info)}
+.reason-card .cite:hover{text-decoration:underline}
+.reason-card .rev{display:inline-block;font-size:10.5px;padding:2px 8px;border-radius:10px;
+  background:var(--info-soft);color:var(--info);margin-top:9px;margin-right:8px}
+
+.means{background:var(--warn-soft);border:1px solid rgba(217,164,65,.26);
+  border-radius:9px;padding:22px 24px;margin-bottom:26px}
+.means h3{font-size:16px;font-weight:600;margin-bottom:12px;color:var(--warn);line-height:1.35}
+.means p{font-size:14px;color:var(--ink-dim);line-height:1.68;max-width:70ch}
+.means p+p{margin-top:11px}
+
+.levels{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.lvl{background:var(--ground);border:1px solid var(--line);border-radius:8px;padding:16px 18px}
+.lvl .n{font-size:20px;font-weight:600;margin-bottom:5px;font-variant-numeric:tabular-nums}
+.lvl .n.up{color:var(--bull)} .lvl .n.dn{color:var(--bear)} .lvl .n.mid{color:var(--warn)}
+.lvl .k{font-size:11.5px;color:var(--ink-faint);margin-bottom:4px}
+.lvl .d{font-size:12.5px;color:var(--ink-dim);line-height:1.58}
+
+.closing{background:var(--panel-2);border:1px solid var(--line);border-radius:9px;
+  padding:21px 23px;margin-bottom:24px;font-size:15px;color:var(--ink);
+  line-height:1.7;max-width:74ch}
+.closing b{font-weight:600}
+
+.jargon{border:1px dashed var(--line);border-radius:8px;padding:15px 18px;
+  font-size:13px;color:var(--ink-faint);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.jargon b{color:var(--ink-dim);font-weight:500}
+.jargon u{text-decoration:none;color:var(--info);margin-left:auto;font-size:12.5px;cursor:pointer}
+.jargon u:hover{text-decoration:underline}
+
+.disc{margin-top:22px;padding-top:18px;border-top:1px solid var(--line-soft);
+  font-size:12.5px;color:var(--ink-faint);line-height:1.65}
+.genfoot{margin-top:14px;font-size:11.5px;color:var(--ink-faint);line-height:1.6}
+.genfoot .warn{color:var(--warn)}
+
+@media (max-width:760px){
+  .levels{grid-template-columns:1fr}
+  .tally{flex-direction:column}
+  .tally .side.up{border-right:none;border-bottom:1px solid var(--line)}
+  .reason-card{flex-direction:column;gap:10px}
+  .reason-card .score{text-align:left;min-width:0;display:flex;gap:8px;align-items:baseline}
+  .reason-card .score .u{margin-top:0}
+}
