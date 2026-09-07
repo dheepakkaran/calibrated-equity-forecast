@@ -15,6 +15,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
+from cef.api import dashboard as dash
 from cef.api import service
 from cef.config import ROOT
 
@@ -116,8 +117,43 @@ def bandit_state() -> dict:
     return service.bandit_state()
 
 
+@app.get("/api/board")
+def board() -> list[dict]:
+    """Macro strip. Each tile carries its availability lag."""
+    return dash.board()
+
+
+@app.get("/api/dashboard/{symbol}")
+def dashboard(symbol: str) -> dict:
+    """Everything the dashboard needs for one symbol, in one round trip.
+
+    Bundled deliberately: the panels are read together and six separate
+    requests would each pay the same panel-load cost for no benefit.
+    """
+    try:
+        fc = service.forecast(symbol)
+    except KeyError:
+        raise HTTPException(404, f"{symbol.upper()} is not in the universe")
+    return {
+        "forecast": fc,
+        "price": dash.price_series(symbol),
+        "levels": dash.key_levels(symbol),
+        "drivers": dash.driver_linkage(symbol),
+        "timeline": dash.timeline(symbol),
+        "coverage": dash.source_coverage(symbol),
+        "attribution": service.attribution_for(symbol, 8),
+        "not_built": dash.NOT_BUILT,
+    }
+
+
 @app.get("/")
 def index() -> FileResponse:
+    return FileResponse(STATIC / "dashboard.html")
+
+
+@app.get("/flow")
+def flow() -> FileResponse:
+    """The guided single-question flow, kept alongside the dashboard."""
     return FileResponse(STATIC / "index.html")
 
 

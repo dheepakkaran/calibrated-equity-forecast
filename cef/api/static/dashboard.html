@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calibrated Selective Prediction — NSE dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/dashboard.css">
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <h1>Calibrated selective prediction <span>/ NSE</span></h1>
+    <p>One question, asked honestly: will this share out-perform or lag the median
+      NSE large-cap in the next session? Confidence is displayed as it is measured —
+      a near-coin-flip renders in amber with the uncertainty stated in words, never
+      as a bold green arrow.</p>
+  </div>
+
+  <div class="screen">
+
+    <!-- chrome -->
+    <div class="chrome">
+      <div class="brand">CSP <span>/ NSE</span></div>
+      <div class="searchwrap">
+        <input id="sym" type="text" placeholder="symbol…" autocomplete="off" spellcheck="false">
+        <div class="ta" id="ta"></div>
+      </div>
+      <div class="navtabs" id="tabs">
+        <div class="on" data-tab="forecast">Forecast</div>
+        <div data-tab="context">Context</div>
+        <div data-tab="compare">Compare</div>
+        <div data-tab="history">History</div>
+        <div data-tab="performance">Performance</div>
+      </div>
+    </div>
+
+    <!-- macro board -->
+    <div class="board" id="board"></div>
+
+    <!-- ═══════════════ FORECAST ═══════════════ -->
+    <section class="tab is-on" data-panel="forecast">
+      <div class="bar" id="symbar"></div>
+
+      <div class="grid-main">
+        <div class="col">
+
+          <div class="verdict" id="verdict"></div>
+
+          <div class="card">
+            <div class="chead"><h3>Price and reference levels</h3>
+              <div class="note" id="px-note">—</div></div>
+            <div id="px-chart"></div>
+            <div class="legend">
+              <span><i style="background:var(--ink-dim)"></i>Close</span>
+              <span><i style="background:var(--warn)"></i>Pivot</span>
+              <span><i style="background:var(--bear)"></i>Resistance</span>
+              <span><i style="background:var(--bull)"></i>Support</span>
+            </div>
+            <div class="micro" id="px-basis">—</div>
+          </div>
+
+          <div class="card">
+            <div class="chead"><h3>Aspect scorecard</h3>
+              <div class="note">SHAP attributions, bucketed · largest scaled to 100</div></div>
+            <table class="asp" id="aspects"></table>
+          </div>
+
+          <div class="card notbuilt" id="notbuilt"></div>
+        </div>
+
+        <div class="rail">
+          <div class="railcard" id="narr-card">
+            <h3>Why this call</h3>
+            <p class="narr" id="narr">Generating…</p>
+            <div class="narr-foot" id="narr-foot"></div>
+          </div>
+          <div class="railcard" id="levels-card"></div>
+          <div class="railcard" id="regime-card"></div>
+          <div class="railcard" id="arms-card"></div>
+          <div class="railcard" id="baseline-card"></div>
+        </div>
+      </div>
+      <div class="disclaimer" id="disc"></div>
+    </section>
+
+    <!-- ═══════════════ CONTEXT ═══════════════ -->
+    <section class="tab" data-panel="context">
+      <div class="bar" id="ctxbar"></div>
+      <div class="grid-main">
+        <div class="col">
+          <div class="card">
+            <div class="chead"><h3>Price with event markers</h3>
+              <div class="note">moves beyond 2σ, matched to filings in a T−1 → T+0 window</div></div>
+            <div id="ctx-chart"></div>
+            <div class="markerkey">
+              <span><i class="dot" style="background:var(--info)"></i>Matched to a filing</span>
+              <span><i class="dot" style="background:var(--bull)"></i>Matched to a driver</span>
+              <span><i class="dot" style="background:var(--ink-faint)"></i>Unexplained</span>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="chead"><h3>Why it moved</h3>
+              <div class="note">every row carries its source, or says it has none</div></div>
+            <table class="attr" id="attr"></table>
+          </div>
+
+          <div class="card">
+            <div class="chead"><h3>What this stock actually tracks</h3>
+              <div class="note">rolling 120-session correlation to <em>lagged</em> drivers</div></div>
+            <div id="drivers"></div>
+            <div class="verify">
+              <b>Why these read lower than a terminal's.</b> The correlation is
+              against the driver's <em>lagged</em> series — the value that was
+              knowable at the Indian close. A same-day silver-versus-stock
+              correlation is far higher and completely unusable for forecasting
+              the session it belongs to.
+            </div>
+          </div>
+
+          <div class="verify">
+            <b>Reading this screen.</b> Attribution is correlational, not causal. A
+            high score means a filing was found close in time whose materiality and
+            direction fit the move — not that it caused it. Low-confidence and
+            unexplained rows are shown rather than hidden, because a move nobody
+            can explain is itself information.
+          </div>
+        </div>
+
+        <div class="rail">
+          <div class="railcard"><h3>Timeline</h3><div class="tl" id="tl"></div></div>
+          <div class="railcard" id="cov-card"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════ COMPARE ═══════════════ -->
+    <section class="tab" data-panel="compare">
+      <div class="bar">
+        <div class="sym">Compare</div>
+        <div class="co">Ranked by conviction — the useful question across a basket
+          is which calls the system is least unsure about.</div>
+        <div class="stamp"><button class="ghost" id="cmp-metals">Metals basket</button>
+          <button class="ghost" id="cmp-it">IT basket</button>
+          <button class="ghost" id="cmp-bank">Banks</button></div>
+      </div>
+      <div class="pad">
+        <table class="d" id="cmp"></table>
+        <div class="micro" id="cmp-note"></div>
+      </div>
+    </section>
+
+    <!-- ═══════════════ HISTORY ═══════════════ -->
+    <section class="tab" data-panel="history">
+      <div class="bar" id="histbar"></div>
+      <div class="pad">
+        <table class="d" id="hist"></table>
+        <div class="micro">Every forecast is written before its session and never
+          rewritten — only an outcome row is attached. Rows marked “no call” were
+          below the conviction threshold and are scored neither right nor wrong.</div>
+      </div>
+    </section>
+
+    <!-- ═══════════════ PERFORMANCE ═══════════════ -->
+    <section class="tab" data-panel="performance">
+      <div class="bar">
+        <div class="sym">Performance</div>
+        <div class="co">The screen that decides whether the confidence numbers
+          elsewhere mean anything.</div>
+      </div>
+      <div class="pad">
+        <div class="statrow" id="stats"></div>
+        <div class="grid-two">
+          <div class="card">
+            <div class="chead"><h3>Reliability</h3>
+              <div class="note" id="rel-note">live resolved forecasts</div></div>
+            <div id="rel-chart"></div>
+            <div class="micro">If the teal line tracks the dashed diagonal, a stated
+              52% is right about 52% of the time.</div>
+          </div>
+          <div class="card">
+            <div class="chead"><h3>Accuracy by regime</h3>
+              <div class="note">where it works, and where it does not</div></div>
+            <table class="d" id="regimes"></table>
+          </div>
+        </div>
+        <div class="card" style="margin-top:18px">
+          <div class="chead"><h3>Bandit posteriors by regime</h3>
+            <div class="note">Beta-Bernoulli mean per arm · uniform below the sample gate</div></div>
+          <table class="d" id="bandit"></table>
+          <div class="micro" id="bandit-note"></div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <div class="footnote" id="foot">
+    <b>Design note.</b> Colour is rationed on purpose. Teal and rose stay
+    desaturated at low confidence and only gain saturation above 60%, which is
+    rare — the model's confidence has never exceeded about 55%. Amber is reserved
+    for uncertainty. The result is a dashboard that looks calm when the model has
+    nothing useful to say, which is most days: on the latest session it declines
+    to call 39 of 52 symbols.
+  </div>
+</div>
+<script src="/static/dashboard.js"></script>
+</body>
+</html>

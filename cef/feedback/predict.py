@@ -42,6 +42,25 @@ def next_session(panel: pd.DataFrame, as_of: pd.Timestamp) -> str:
     return (as_of + pd.tseries.offsets.BDay(1)).strftime("%Y-%m-%d")
 
 
+def existing(symbol: str, as_of_date: str, target: str) -> dict | None:
+    """A forecast already written for this (symbol, session, target).
+
+    Forecasts must be idempotent per session. Without this check every page
+    view wrote a fresh row, so the history screen would show one symbol
+    forecast three times for the same session - which quietly contradicts the
+    claim that a forecast is written once and never rewritten. The stored row
+    is authoritative; a later view returns it rather than recomputing.
+    """
+    with connect() as conn:
+        row = conn.execute(
+            "SELECT * FROM predictions WHERE symbol=? AND as_of_date=? AND target=? "
+            "ORDER BY created_at LIMIT 1", (symbol, as_of_date, target)).fetchone()
+        if row is None:
+            return None
+        cols = [c[0] for c in conn.execute("SELECT * FROM predictions LIMIT 0").description]
+    return dict(zip(cols, row))
+
+
 def make_prediction(panel: pd.DataFrame, symbol: str, ens: Ensemble,
                     as_of: pd.Timestamp | None = None,
                     rng: np.random.Generator | None = None) -> dict:
@@ -52,6 +71,11 @@ def make_prediction(panel: pd.DataFrame, symbol: str, ens: Ensemble,
     row = sub[sub["date"] == as_of]
     if row.empty:
         raise ValueError(f"no row for {symbol} at {as_of.date()}")
+
+    prior = existing(symbol, as_of.strftime("%Y-%m-%d"), ens.target)
+    if prior is not None:
+        return {**prior, "bandit_mode": "replayed from the stored forecast",
+                "bandit_n_pulls": None}
 
     probas = ens.arm_probas(row)
     regime = str(row["regime"].iloc[0])

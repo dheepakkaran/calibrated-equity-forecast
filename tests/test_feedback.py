@@ -162,3 +162,35 @@ def test_performance_compares_against_the_selected_rows():
     assert "edge_vs_majority_pp" in perf
     expected = (perf["accuracy"] - perf["majority_baseline_on_acted"]) * 100
     assert perf["edge_vs_majority_pp"] == pytest.approx(expected, abs=0.02)
+
+
+# --------------------------------------------------------------------------
+# Idempotency
+# --------------------------------------------------------------------------
+def test_no_duplicate_forecasts_per_session():
+    """One forecast per (symbol, session, target).
+
+    Every dashboard page view calls the forecast path, and before this was
+    enforced each view wrote a fresh row - so the history screen showed the
+    same symbol forecast three times for one session. That quietly contradicts
+    the claim that a forecast is written once and never rewritten, which is the
+    whole basis for treating the history screen as a record.
+    """
+    from cef.db import connect
+
+    with connect() as conn:
+        dupes = conn.execute(
+            "SELECT COUNT(*) FROM (SELECT symbol, as_of_date, target "
+            "FROM predictions GROUP BY 1,2,3 HAVING COUNT(*) > 1)").fetchone()[0]
+    assert dupes == 0, f"{dupes} (symbol, session) pairs have more than one forecast"
+
+
+def test_every_outcome_points_at_a_live_prediction():
+    """No orphaned outcomes - a score with no claim attached to it."""
+    from cef.db import connect
+
+    with connect() as conn:
+        orphans = conn.execute(
+            "SELECT COUNT(*) FROM outcomes o LEFT JOIN predictions p "
+            "ON p.id = o.prediction_id WHERE p.id IS NULL").fetchone()[0]
+    assert orphans == 0, f"{orphans} outcomes reference a prediction that is gone"
