@@ -24,7 +24,18 @@ HISTORY_END = date(2026, 9, 6)
 
 # --- API keys (optional at ingest time; each source degrades gracefully) -----
 FRED_API_KEY = os.getenv("FRED_API_KEY", "")
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+
+# Narration provider (M2). The language model rewrites structured evidence the
+# pipeline has already produced; it never computes a number and never predicts.
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+
+# gpt-5-mini by default: narration is constrained rewriting, not reasoning, and
+# output is cached per symbol per forecast date so one generation serves every
+# visitor that day. Note the gpt-5 family bills reasoning tokens even for
+# trivial replies (74 completion tokens to answer "OK"), so keep reasoning
+# effort low and the prompt tight.
+NARRATOR_MODEL = os.getenv("NARRATOR_MODEL", "gpt-5-mini")
+NARRATOR_REASONING_EFFORT = os.getenv("NARRATOR_REASONING_EFFORT", "low")
 
 
 @dataclass(frozen=True)

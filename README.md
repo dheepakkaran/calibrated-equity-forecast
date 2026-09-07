@@ -227,7 +227,7 @@ python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
 .venv/bin/python -m pip install -e .
 .venv/bin/python scripts/postinstall_macos.py   # macOS arm64 only, see below
-cp .env.example .env                            # add FRED_API_KEY when needed
+cp .env.example .env                            # add FRED_API_KEY / OPENAI_API_KEY
 ```
 
 On Apple Silicon, LightGBM's wheel links `@rpath/libomp.dylib` but resolves it
@@ -250,7 +250,7 @@ installing Homebrew.
 | OHLCV, 52 NSE symbols | yfinance (`.NS`) | none |
 | Global indices, FX, commodities, rates | yfinance | none |
 | US macro releases | FRED | free, `.env` |
-| Narration (M2) | Anthropic API | `.env` |
+| Narration (M2) | OpenAI API (`gpt-5-mini`) | `.env` |
 
 ---
 
