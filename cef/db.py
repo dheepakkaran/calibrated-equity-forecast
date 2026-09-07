@@ -126,6 +126,67 @@ CREATE TABLE IF NOT EXISTS attributions (
     PRIMARY KEY (symbol, date)
 );
 
+-- Live forecasts. Written before the target session opens and never touched
+-- again except to attach an outcome, so the record of what was claimed cannot
+-- drift after the fact. `feature_snapshot` stores the exact inputs, which is
+-- what makes a past forecast auditable rather than merely logged.
+CREATE TABLE IF NOT EXISTS predictions (
+    id            TEXT    NOT NULL PRIMARY KEY,
+    symbol        TEXT    NOT NULL,
+    as_of_date    TEXT    NOT NULL,      -- session whose close produced it
+    target_date   TEXT    NOT NULL,      -- session being forecast
+    target        TEXT    NOT NULL,      -- y_rel etc
+    direction     TEXT    NOT NULL,      -- outperform | underperform | abstain
+    proba         REAL    NOT NULL,      -- calibrated P(outperform)
+    confidence    REAL    NOT NULL,      -- max(p, 1-p)
+    conviction    REAL,                  -- |proba - 0.5|, drives selection
+    acted         INTEGER NOT NULL,      -- 1 if above the abstention threshold
+    regime        TEXT,
+    vol_bucket    TEXT,
+    trend_bucket  TEXT,
+    arm_weights   TEXT,                  -- JSON: bandit weights used
+    arm_probas    TEXT,                  -- JSON: each arm's raw output
+    aspects       TEXT,                  -- JSON: bucketed SHAP
+    feature_snapshot TEXT,               -- JSON
+    model_version TEXT,
+    status        TEXT    NOT NULL,      -- PENDING | RESOLVED | VOID
+    created_at    TEXT    NOT NULL
+);
+CREATE INDEX IF NOT EXISTS ix_pred_target ON predictions(target_date, status);
+CREATE INDEX IF NOT EXISTS ix_pred_symbol ON predictions(symbol, as_of_date);
+
+CREATE TABLE IF NOT EXISTS outcomes (
+    prediction_id TEXT NOT NULL PRIMARY KEY,
+    actual_ret    REAL,
+    actual_ret_rel REAL,
+    actual_dir    TEXT,
+    correct       INTEGER,
+    reward        REAL,
+    arm_rewards   TEXT,                  -- JSON: per-arm reward, for the bandit
+    resolved_at   TEXT NOT NULL
+);
+
+-- Beta-Bernoulli posterior per (arm, regime). Thompson sampling draws from
+-- these; the resolver updates them.
+CREATE TABLE IF NOT EXISTS bandit_state (
+    arm        TEXT    NOT NULL,
+    regime     TEXT    NOT NULL,
+    alpha      REAL    NOT NULL,
+    beta       REAL    NOT NULL,
+    n_pulls    INTEGER NOT NULL,
+    updated_at TEXT    NOT NULL,
+    PRIMARY KEY (arm, regime)
+);
+
+-- Drift and guardrail events, kept so a fallback can be explained later.
+CREATE TABLE IF NOT EXISTS guardrail_log (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    at         TEXT NOT NULL,
+    kind       TEXT NOT NULL,
+    regime     TEXT,
+    detail     TEXT
+);
+
 -- One row per (walk-forward run, fold, model). The permanent record of every
 -- number this project has ever reported.
 CREATE TABLE IF NOT EXISTS wf_metrics (

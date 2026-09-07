@@ -60,6 +60,8 @@ associated with" - never "caused" or "because of".
 `points` values are already reader-facing: describe them as points, or \
 describe the factor qualitatively ("the largest single influence"). Percentages \
 and rupee prices may be quoted as given.
+8. Express probabilities and accuracies as percentages, never as bare \
+decimals. Write "about 51%", not "0.51".
 
 Style: short sentences, no jargon, no bullet lists, 90-140 words. Explain any \
 unavoidable term in the same sentence. Lead with what the call is and how weak \

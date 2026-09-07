@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calibrated Selective Prediction — NSE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+
+<div class="progress"><div class="progress-bar" id="progress"></div></div>
+
+<header class="masthead">
+  <div class="wordmark">Calibrated Selective Prediction <span>/ NSE</span></div>
+  <button class="ghost" id="restart" hidden>Start again</button>
+</header>
+
+<main id="deck">
+
+  <!-- ── 1 · intro ─────────────────────────────────────────────── -->
+  <section class="step is-active" data-step="intro">
+    <div class="inner">
+      <p class="eyebrow">Research system · educational use only</p>
+      <h1>This tells you what a model thinks, and how little it knows.</h1>
+      <p class="lede">
+        It forecasts one thing: whether an NSE share will out-perform or
+        under-perform the median large-cap in the next session. On held-out
+        data it is right <strong>51.0%</strong> of the time against a
+        <strong>50.0%</strong> coin flip.
+      </p>
+      <p class="lede dim">
+        That is a real edge and a small one. Most days it has nothing useful to
+        say, and on those days it says so.
+      </p>
+      <button class="cta" data-next>Begin <kbd>↵</kbd></button>
+      <p class="micro">Not investment advice. No trades are executed.</p>
+    </div>
+  </section>
+
+  <!-- ── 2 · symbol ────────────────────────────────────────────── -->
+  <section class="step" data-step="symbol">
+    <div class="inner">
+      <p class="eyebrow"><span class="q-num">1</span> → Which share?</p>
+      <h2>Type an NSE symbol.</h2>
+      <div class="field">
+        <input id="symbol-input" type="text" autocomplete="off" spellcheck="false"
+               placeholder="HINDZINC" aria-label="NSE symbol">
+        <div class="typeahead" id="typeahead" role="listbox"></div>
+      </div>
+      <p class="hint">52 symbols in the universe. <kbd>↑</kbd><kbd>↓</kbd> to pick, <kbd>↵</kbd> to run.</p>
+    </div>
+  </section>
+
+  <!-- ── 3 · working ───────────────────────────────────────────── -->
+  <section class="step" data-step="working">
+    <div class="inner center">
+      <div class="pulse"></div>
+      <h2 id="working-label">Fitting the ensemble…</h2>
+      <p class="lede dim" id="working-sub">
+        Four arms, trained on everything up to the last close. Nothing after it.
+      </p>
+    </div>
+  </section>
+
+  <!-- ── 4 · the answer ────────────────────────────────────────── -->
+  <section class="step" data-step="verdict">
+    <div class="inner">
+      <p class="eyebrow" id="verdict-eyebrow">—</p>
+      <h2 class="verdict-line" id="verdict-line">—</h2>
+      <div class="conf">
+        <div class="conf-num" id="conf-num">—</div>
+        <div class="conf-copy">
+          <div class="conf-label">confidence</div>
+          <p id="conf-note">—</p>
+        </div>
+      </div>
+      <div class="gauge" aria-hidden="true">
+        <div class="gauge-track"></div>
+        <div class="gauge-dead"></div>
+        <div class="gauge-needle" id="gauge-needle"></div>
+        <div class="gauge-keys">
+          <span>under-performs</span><span>no useful opinion</span><span>out-performs</span>
+        </div>
+      </div>
+      <div class="facts" id="verdict-facts"></div>
+      <button class="cta" data-next>Why <kbd>↵</kbd></button>
+    </div>
+  </section>
+
+  <!-- ── 5 · why ───────────────────────────────────────────────── -->
+  <section class="step" data-step="why">
+    <div class="inner">
+      <p class="eyebrow"><span class="q-num">2</span> → What drove it</p>
+      <h2>Where the signal came from.</h2>
+      <div class="aspects" id="aspects"></div>
+      <p class="hint">
+        Points are the model's own attributions, scaled so the largest is 100.
+        Positive pushes toward out-performing.
+      </p>
+      <div class="narration" id="narration" hidden>
+        <div class="narration-head">In plain language</div>
+        <p id="narration-text"></p>
+        <div class="narration-foot" id="narration-foot"></div>
+      </div>
+      <button class="cta" data-next>Evidence <kbd>↵</kbd></button>
+    </div>
+  </section>
+
+  <!-- ── 6 · evidence ──────────────────────────────────────────── -->
+  <section class="step" data-step="evidence">
+    <div class="inner">
+      <p class="eyebrow"><span class="q-num">3</span> → Recent big moves</p>
+      <h2>What moved it, when we can tell.</h2>
+      <div class="moves" id="moves"></div>
+      <button class="cta" data-next>Track record <kbd>↵</kbd></button>
+    </div>
+  </section>
+
+  <!-- ── 7 · track record ──────────────────────────────────────── -->
+  <section class="step" data-step="record">
+    <div class="inner">
+      <p class="eyebrow"><span class="q-num">4</span> → Honesty check</p>
+      <h2>How often this has been right.</h2>
+      <div class="scorecards" id="scorecards"></div>
+      <div class="reliability" id="reliability"></div>
+      <p class="hint" id="record-note"></p>
+      <div class="row-actions">
+        <button class="cta" id="again">Another share</button>
+        <button class="ghost" id="technical">Technical view</button>
+      </div>
+      <p class="micro">
+        Educational and research use only. Not investment advice. Next-session
+        equity direction is close to unpredictable; the numbers above include
+        every forecast this system got wrong.
+      </p>
+    </div>
+  </section>
+
+  <!-- ── 8 · technical ─────────────────────────────────────────── -->
+  <section class="step" data-step="technical">
+    <div class="inner wide">
+      <p class="eyebrow">Technical view</p>
+      <h2>Arms, weights and regime.</h2>
+      <div class="tech-grid" id="tech-grid"></div>
+      <button class="ghost" id="back-to-record">← Back</button>
+    </div>
+  </section>
+
+</main>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

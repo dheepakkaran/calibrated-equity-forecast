@@ -247,6 +247,128 @@ signs as U+2212 rather than an ASCII hyphen.
 
 ---
 
+## Headline result — M3 (interface and feedback loop)
+
+The loop runs: forecasts are written before the session they describe, resolved
+against what happened, and the outcomes update a contextual bandit that
+reweights the ensemble by market regime.
+
+Replayed over 12 months and 30 randomly chosen symbols — 7,464 forecasts
+written and resolved:
+
+| | |
+|---|---|
+| Forecasts made | 7,464 |
+| Forecasts carrying an actual call | 3,308 |
+| **Abstention rate** | **55.7%** |
+| Accuracy on the calls it made | **52.33%** |
+| Majority baseline *on those same rows* | 50.45% |
+| **Edge** | **+1.87 pp** |
+| Mean reward | −0.0017 |
+
+The edge is larger than M1's +1.01 pp at full coverage, and that is not a new
+discovery — it is the coverage curve arriving one session at a time. Acting on
+44% of sessions is where M1 already predicted roughly +1.7 pp, so the live loop
+reproducing it is the machinery working, not the model improving.
+
+**The negative mean reward is by design and worth stating plainly.** The reward
+function penalises a confident miss at 1.5× a confident hit, so its expectation
+is `conviction × (2.5p − 1.5)`, which only turns positive above **60%**
+accuracy. At 52% it is slightly negative and always will be. A reward function
+that paid out at 52% would be measuring something other than skill.
+
+A first, shorter replay looked much better — 56.1% over three months and 12
+symbols — and it was wrong to believe. The symbols were the alphabetical head
+of the universe (Adani-and-banks heavy) and the window was the single best fold
+in the whole M1 assessment. Both were fixed: the replay now samples symbols
+randomly and runs a year.
+
+### Where the model works, and where it does not
+
+The regime breakdown is the most useful output of the whole loop:
+
+| regime | n | accuracy |
+|---|---|---|
+| compressed vol · trending down | 100 | **58.00%** |
+| compressed vol · range-bound | 371 | **57.14%** |
+| normal vol · range-bound | 1,346 | 53.71% |
+| elevated vol · trending down | 129 | 52.71% |
+| normal vol · trending down | 259 | 49.81% |
+| elevated vol · range-bound | 280 | 49.64% |
+| **normal vol · trending up** | 476 | **49.16%** |
+| **elevated vol · trending up** | 324 | **48.77%** |
+
+It works in quiet, directionless or falling markets and fails outright in
+rising and volatile ones. That is consistent with M1's held-out per-regime
+table, where elevated volatility was the one regime with a negative edge, and
+it is exactly the structure a per-regime bandit exists to exploit.
+
+### The feedback layer, framed honestly
+
+This is **not** reinforcement learning, and calling it that would be the kind of
+overclaim the rest of the project is built to avoid. There is no environment the
+system acts upon, no state transition it causes, and no multi-step credit
+assignment. What it is: a **contextual multi-armed bandit with delayed reward.**
+
+```
+arms     lightgbm · lightgbm_cal · logistic_cal · reversal rule
+context  volatility bucket x trend state  (9 regimes)
+reward   conviction-weighted hit/miss, computed at T+1
+method   Thompson sampling on a Beta-Bernoulli posterior per (arm, regime)
+```
+
+The two-parameter reversal rule is deliberately included as a standing honesty
+check: M1 found it matched the GBM's accuracy, so if the bandit ever loads onto
+it, the machine learning is not earning its place.
+
+Three guardrails, each of which caps how much the bandit can help — which is
+the correct trade, because what they prevent is worse than what they cost:
+
+- **Minimum sample gate.** Weights stay uniform in a regime below 100 resolved
+  forecasts. With a true edge near one percentage point, a handful of outcomes
+  is indistinguishable from noise.
+- **Floor and ceiling.** No arm below 5% or above 60%, enforced by projecting
+  onto the constraint set. Clipping and rescaling — the obvious implementation —
+  is wrong: rescaling to restore the sum pushes a just-capped arm back over its
+  ceiling. A test asserts the bound holds for a 0.97 runaway input.
+- **Drift detection.** If rolling accuracy in a regime falls below 48% over 60
+  resolved forecasts, that regime reverts to uniform weights and the event is
+  logged. This fired during the replay, as it should have.
+
+### Interface
+
+Typeform-style single-question flow, served by FastAPI as two static files. No
+Node, no build step, no framework — the interaction is a linear sequence of
+steps, which is not what a framework earns its weight on.
+
+M1 and M2 dictated the design more than taste did:
+
+- **Model confidence never exceeds about 55%,** so there is no state in which
+  the interface shows a bold green arrow. Confidence renders amber by default
+  and only gains saturation above 60%, which is rare.
+- **"No useful opinion" is a first-class screen,** not an empty state. It is the
+  *common* case: on the latest session the system declines to call 39 of 52
+  symbols, and the copy says that is normal rather than apologising for it.
+- **"We don't know why this moved" is a designed state too,** because 62% of
+  significant moves have no identifiable cause.
+- **No number appears without its comparator.** Every accuracy figure renders
+  beside the coin flip; the live accuracy renders beside the majority baseline
+  on the same rows.
+
+Verified in-browser end to end: the abstain path, the directional path
+(BHARTIARTL at 55.3%, rendered amber), aspect attribution, evidence with source
+links, and the live reliability curve. Three defects were found and fixed by
+running it — a conviction reported in "basis points" that was actually
+percentage points, a live accuracy shown without its baseline, and an internal
+field name (`kind: "recent"`) leaking into the narrator's prose as "the
+attribution is recent".
+
+```bash
+.venv/bin/uvicorn cef.api.main:app --port 8123     # then open localhost:8123
+```
+
+---
+
 ## Why the numbers are believable
 
 Every result above rests on the validation design, so that is where the effort
@@ -333,6 +455,7 @@ scripts/tune.py             search, tune folds only
 scripts/report.py           held-out assessment + reliability diagram
 scripts/attribute.py        significant moves -> evidence
 scripts/forecast.py         one symbol: call, aspects, evidence, narration
+scripts/replay.py           replay the live loop over history
 
 cef/
   universe.py              52 symbols, sector map, macro series + availability lags
@@ -344,6 +467,16 @@ cef/
     cross_sectional.py     27 features, relative strength / beta / driver linkage
     breaks.py              capital-structure break detection, exchange-anchored
     build.py               panel assembly, rebasing, every target definition
+  feedback/
+    ensemble.py            the four arms the bandit weights over
+    bandit.py              contextual Thompson sampling + guardrails
+    reward.py              conviction-weighted, asymmetric reward
+    predict.py             writes forecasts with full feature snapshots
+    resolver.py            nightly resolution, per-arm scoring
+  api/
+    main.py                FastAPI surface
+    service.py             everything the handlers need, no HTTP in it
+    static/                Typeform-style flow: index.html, app.css, app.js
   evidence/
     event_map.py           filing materiality + direction priors
     moves.py               significant-move detection
@@ -362,6 +495,7 @@ cef/
     runner.py              the experiment loop; enforces tune/holdout separation
 tests/test_no_leakage.py   15 leakage tests
 tests/test_evidence.py     30 evidence-layer tests
+tests/test_feedback.py     16 bandit and reward tests
 ```
 
 Technical indicators are hand-written rather than taken from TA-Lib or
@@ -397,6 +531,8 @@ installing Homebrew.
 .venv/bin/python scripts/report.py --split holdout        # the held-out number
 .venv/bin/python scripts/attribute.py --sigma 2.0         # move attribution
 .venv/bin/python scripts/forecast.py HINDZINC             # one full forecast
+.venv/bin/python scripts/replay.py --n-symbols 30         # exercise the loop
+.venv/bin/uvicorn cef.api.main:app --port 8123            # the interface
 ```
 
 ### Data sources
@@ -431,12 +567,10 @@ history.
 - **M2 — evidence and attribution.** ✅ NSE filings corpus, causal filing
   timestamps, materiality gating, move attribution with sources, driver
   linkage, SHAP-to-aspect bucketing, verified narration.
-- **M3 — interface and feedback loop.** Typeform-style UI, prediction
-  persistence, nightly resolver, delayed-reward Thompson-sampling bandit over
-  ensemble members.
+- **M3 — interface and feedback loop.** ✅ Prediction persistence with feature
+  snapshots, nightly resolver, contextual Thompson-sampling bandit with
+  guardrails, FastAPI surface, Typeform-style interface.
 
-M1 and M2 constrain M3 directly. Model confidence never exceeds about 53%, so
-the interface can never show a bold directional arrow and "no useful opinion
-today" has to be a first-class state rather than an edge case. And since 62%
-of significant moves have no identifiable cause, "we don't know why this moved"
-needs to be a designed state too, not an empty panel.
+Still open: the flow (FII/DII) and fundamentals analyzers, a range/volatility
+head, multi-symbol comparison in the interface, and scheduling the resolver as
+a real nightly job rather than a script.
