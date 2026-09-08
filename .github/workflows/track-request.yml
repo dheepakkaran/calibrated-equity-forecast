@@ -31,10 +31,14 @@ jobs:
           python-version: '3.11'
           cache: pip
 
+      # requirements-ci.txt, not requirements.txt: the full file pins torch and
+      # transformers for FinBERT, whose import is lazy and which this job never
+      # reaches. Installing it anyway pulls several gigabytes of CUDA wheels
+      # for code that does not run.
       - name: Install
         run: |
           python -m pip install --quiet --upgrade pip
-          python -m pip install --quiet -r requirements.txt
+          python -m pip install --quiet -r requirements-ci.txt
           python -m pip install --quiet -e . --no-deps
 
       - name: Read the symbol
@@ -49,19 +53,18 @@ jobs:
 
       # The panel is a build artefact rather than a committed file, so it is
       # rebuilt here. Ingest is ~15s and the feature build ~5s.
+      # postinstall_macos.py is a no-op off macOS; the libomp rpath problem it
+      # fixes does not exist on the Linux runner.
       - name: Build the panel
-        env:
-          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
         run: |
-          python scripts/postinstall_macos.py || true
           python scripts/ingest.py
           python scripts/build_features.py
 
+      # No language-model key here on purpose: track.py records the forecast
+      # and never generates prose, so the guess is written whether or not a
+      # narration provider is configured.
       - name: Track
         id: track
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           python scripts/track.py "${{ steps.sym.outputs.symbol }}" \
             --note "issue #${{ github.event.issue.number }}" | tee /tmp/out.json
