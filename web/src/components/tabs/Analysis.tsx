@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import type { Payload } from '../../lib/types'
 import PriceChart from '../PriceChart'
+import { Num, Panel, Spark } from '../ui'
 import './Analysis.css'
 
 const EASE = [0.22, 0.61, 0.36, 1] as const
@@ -28,15 +29,20 @@ export default function Analysis({ data }: { data: Payload }) {
         </div>
         <div className="an-board">
           {data.board.map((b, i) => (
-            <motion.div key={b.key} className="an-tile" title={b.availability}
+            <motion.div key={b.key}
+              className={b.lag_sessions ? 'an-tile is-lagged' : 'an-tile'}
+              title={b.availability}
               initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: Math.min(i * 0.02, 0.22), duration: 0.3, ease: EASE }}>
+              transition={{ delay: Math.min(i * 0.025, 0.28), duration: 0.36, ease: EASE }}>
               <div className="an-tl">{b.label}</div>
               <div className="an-tv">{num(b.value, b.value > 1000 ? 0 : 2)}</div>
-              <div className={`an-tc ${b.chg_pct > 0.02 ? 'up' : b.chg_pct < -0.02 ? 'dn' : 'fl'}`}>
-                {pct(b.chg_pct)}
+              <div className="an-trow">
+                <span className={`an-tc ${b.chg_pct > 0.02 ? 'up' : b.chg_pct < -0.02 ? 'dn' : 'fl'}`}>
+                  {pct(Math.abs(b.chg_pct))}
+                </span>
+                <span className="an-tspark"><Spark points={b.spark ?? []} /></span>
               </div>
-              <div className="an-tlag">{b.lag_sessions ? 'held back 1 session' : 'live'}</div>
+              <div className="an-tlag">{b.lag_sessions ? 'read at a lag' : 'same session'}</div>
             </motion.div>
           ))}
         </div>
@@ -51,7 +57,7 @@ export default function Analysis({ data }: { data: Payload }) {
           points is the reversal effect, not an error: a share that has just run
           ahead tends to give a little back.
         </div>
-        <div className="card">
+        <Panel>
           <table className="d an-asp">
             <thead>
               <tr><th style={{ width: '40%' }}>Aspect</th><th style={{ width: '14%' }}>Share of signal</th>
@@ -72,24 +78,24 @@ export default function Analysis({ data }: { data: Payload }) {
                     <td className="num">{(a.share_of_signal * 100).toFixed(1)}%</td>
                     <td>
                       <div className="an-bar">
-                        <motion.i
+                        <motion.i className={pos ? 'pos' : 'neg'}
                           initial={{ width: 0 }} animate={{ width: `${w}%` }}
-                          transition={{ duration: 0.55, ease: EASE }}
-                          style={{ background: `var(--${pos ? 'bull' : 'bear'})`, [pos ? 'left' : 'right']: '50%' }} />
+                          transition={{ duration: 0.65, ease: EASE }}
+                          style={{ [pos ? 'left' : 'right']: '50%' }} />
                         <span className="an-mid" />
                       </div>
                     </td>
-                    <td className={`num an-pts ${pos ? 'p' : 'n'}`}>{pos ? '+' : ''}{a.points}</td>
+                    <td className={`num an-pts ${pos ? '' : 'n'}`}>{pos ? '+' : '−'}{Math.abs(a.points)}</td>
                   </tr>
                 )
               })}
               <tr className="an-net">
                 <td>Net</td><td /><td />
-                <td className={`num an-pts ${net > 0 ? 'p' : 'n'}`}>{net > 0 ? '+' : ''}{net}</td>
+                <td className={`num an-pts ${net > 0 ? '' : 'n'}`}>{net > 0 ? '+' : '−'}{Math.abs(net)}</td>
               </tr>
             </tbody>
           </table>
-        </div>
+        </Panel>
       </div>
 
       {/* ── history ─────────────────────────────────────────────── */}
@@ -99,14 +105,14 @@ export default function Analysis({ data }: { data: Payload }) {
           {data.price.sessions} sessions, with the moves that had evidence attached
           marked. Hover any marker for what was filed.
         </div>
-        <div className="card">
+        <Panel>
           <PriceChart price={data.price} levels={data.levels as Record<string, number>} />
-        </div>
+        </Panel>
       </div>
 
       {/* ── drivers + regime ───────────────────────────────────── */}
       <div className="grid-2">
-        <div className="card">
+        <Panel>
           <div className="sect-head" style={{ fontSize: 14 }}>What this share tracks</div>
           <div className="micro" style={{ marginBottom: 14 }}>
             Rolling 120-session correlation against the <em>lagged</em> driver — the
@@ -119,30 +125,29 @@ export default function Analysis({ data }: { data: Payload }) {
               <div className="an-drv" key={d.driver}>
                 <div className="an-dname">{d.driver}</div>
                 <div className="an-dbar">
-                  <motion.i initial={{ width: 0 }}
+                  <motion.i className={c >= 0 ? '' : 'neg'} initial={{ width: 0 }}
                     animate={{ width: `${Math.min(100, Math.abs(c) * 100)}%` }}
-                    transition={{ duration: 0.5, ease: EASE }}
-                    style={{ background: c >= 0 ? 'var(--info)' : 'var(--bear)' }} />
+                    transition={{ duration: 0.6, ease: EASE }} />
                 </div>
                 <div className="an-dcorr num">{c >= 0 ? '+' : ''}{c.toFixed(3)}</div>
-                <div className={`an-dchg num ${(d.last_chg_pct ?? 0) > 0 ? 'up' : (d.last_chg_pct ?? 0) < 0 ? 'dn' : 'fl'}`}>
-                  {pct(d.last_chg_pct)}
+                <div className={`an-dchg num an-tc ${(d.last_chg_pct ?? 0) > 0 ? 'up' : (d.last_chg_pct ?? 0) < 0 ? 'dn' : 'fl'}`}>
+                  {pct(Math.abs(d.last_chg_pct ?? 0))}
                 </div>
               </div>
             )
           })}
-        </div>
+        </Panel>
 
-        <div className="card">
+        <Panel>
           <div className="sect-head" style={{ fontSize: 14 }}>Conditions and the four models</div>
           <div className="micro" style={{ marginBottom: 14 }}>
             Regime is the context the weighting is held against — nine buckets,
             each with its own record.
           </div>
           <div className="an-kv"><span>How much it swings</span>
-            <span className={`pill ${f.regime.volatility === 'elevated' ? 'warn' : 'flat'}`}>{f.regime.volatility}</span></div>
+            <span className={f.regime.volatility === 'elevated' ? 'chip strong' : 'chip'}>{f.regime.volatility}</span></div>
           <div className="an-kv"><span>Trend</span>
-            <span className="pill flat">{f.regime.trend.replace('_', ' ')}</span></div>
+            <span className="chip">{f.regime.trend.replace('_', ' ')}</span></div>
           <div className="an-kv"><span>Typical daily swing</span><b>₹{num(f.typical_daily_range)}</b></div>
           <div className="an-sep" />
           {Object.keys(f.arms.probas).map((a) => (
@@ -158,7 +163,7 @@ export default function Analysis({ data }: { data: Payload }) {
             accuracy on held-out data, so if the weighting ever loads onto it, the
             machine learning is not earning its place.
           </div>
-        </div>
+        </Panel>
       </div>
 
       {/* ── track record ───────────────────────────────────────── */}
@@ -169,18 +174,18 @@ export default function Analysis({ data }: { data: Payload }) {
           after the configuration was frozen.
         </div>
         <div className="tiles">
-          <div className="tile"><div className="tile-n">{(t.accuracy * 100).toFixed(1)}%</div>
+          <div className="tile"><div className="tile-n"><Num value={t.accuracy * 100} decimals={1} suffix="%" /></div>
             <div className="tile-l">Held-out accuracy<br />{t.window}</div></div>
           <div className="tile"><div className="tile-n dim">{(t.coin_flip_baseline * 100).toFixed(1)}%</div>
             <div className="tile-l">Coin flip<br />what beating nothing looks like</div></div>
-          <div className="tile"><div className="tile-n">+{t.edge_pp} pp</div>
+          <div className="tile"><div className="tile-n"><Num value={t.edge_pp} decimals={2} signed suffix=" pp" delay={0.2} /></div>
             <div className="tile-l">Edge<br />t = {t.fold_t_stat} · {t.folds_won} folds</div></div>
-          <div className="tile"><div className="tile-n warn">{t.ece_pooled_pp} pp</div>
+          <div className="tile"><div className="tile-n hollow">{t.ece_pooled_pp} pp</div>
             <div className="tile-l">Calibration error<br />a stated 52% means 52%</div></div>
           <div className="tile"><div className="tile-n">{(t.accuracy_at_10pct_coverage * 100).toFixed(1)}%</div>
             <div className="tile-l">At 10% coverage<br />the edge lives in the tails</div></div>
         </div>
-        <div className="verify">
+        <div className="note">
           <b>What the edge actually is.</b> A two-parameter rule — a share that
           out-performed today tends to give a little back tomorrow — matches this
           model's accuracy. The models earn their place by producing a calibrated

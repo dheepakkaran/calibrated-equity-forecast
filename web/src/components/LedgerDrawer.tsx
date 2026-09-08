@@ -6,8 +6,11 @@ import './LedgerDrawer.css'
 
 const EASE = [0.22, 0.61, 0.36, 1] as const
 
+// okay is the only state that earns the inverted chip; okayish is hatched
+// because it is exactly "we cannot tell"; not okay is left plain and quiet
+// rather than shouted in red.
 const CAT: Record<string, string> = {
-  okay: 'bull', okayish: 'warn', 'not okay': 'bear',
+  okay: 'chip solid', okayish: 'chip hatch', 'not okay': 'chip',
 }
 
 export default function LedgerDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -50,9 +53,9 @@ export default function LedgerDrawer({ open, onClose }: { open: boolean; onClose
               <div className="ld-sum">
                 <div className="ld-stat"><b>{sum.tracked}</b><span>tracked</span></div>
                 <div className="ld-stat"><b>{sum.pending}</b><span>awaiting</span></div>
-                <div className="ld-stat"><b className="bull">{sum.categories.okay ?? 0}</b><span>okay</span></div>
-                <div className="ld-stat"><b className="warn">{sum.categories.okayish ?? 0}</b><span>okayish</span></div>
-                <div className="ld-stat"><b className="bear">{sum.categories['not okay'] ?? 0}</b><span>not okay</span></div>
+                <div className="ld-stat"><b>{sum.categories.okay ?? 0}</b><span>okay</span></div>
+                <div className="ld-stat"><b className="dim">{sum.categories.okayish ?? 0}</b><span>okayish</span></div>
+                <div className="ld-stat"><b className="dim">{sum.categories['not okay'] ?? 0}</b><span>not okay</span></div>
                 <div className="ld-stat">
                   <b>{sum.direction_accuracy === null ? '—' : `${(sum.direction_accuracy * 100).toFixed(0)}%`}</b>
                   <span>direction, on calls only</span>
@@ -76,8 +79,8 @@ export default function LedgerDrawer({ open, onClose }: { open: boolean; onClose
                     <b>{r.symbol}</b>
                     <span className="micro">for {r.target_session}</span>
                     {r.outcome
-                      ? <span className={`pill ${CAT[r.outcome.category] ?? 'flat'}`}>{r.outcome.category}</span>
-                      : <span className="pill flat">{r.status === 'EARLY_READ' ? 'early read' : 'awaiting'}</span>}
+                      ? <span className={CAT[r.outcome.category] ?? 'chip'}>{r.outcome.category}</span>
+                      : <span className="chip hatch">{r.status === 'EARLY_READ' ? 'early read' : 'awaiting'}</span>}
                   </div>
 
                   <div className="ld-guess">
@@ -101,10 +104,9 @@ export default function LedgerDrawer({ open, onClose }: { open: boolean; onClose
                       <div className="ld-two">
                         <div>
                           <span className="micro">direction</span>
-                          <b className={r.outcome.direction_hit === null ? ''
-                            : r.outcome.direction_hit ? 'bull' : 'bear'}>
+                          <b className={r.outcome.direction_hit ? '' : 'dim'}>
                             {r.outcome.direction_hit === null ? 'abstained'
-                              : r.outcome.direction_hit ? 'right' : 'wrong'}
+                              : r.outcome.direction_hit ? '▲ right' : '▽ wrong'}
                           </b>
                         </div>
                         <div>
@@ -113,8 +115,8 @@ export default function LedgerDrawer({ open, onClose }: { open: boolean; onClose
                         </div>
                         <div>
                           <span className="micro">reward</span>
-                          <b className={r.outcome.reward > 0 ? 'bull' : r.outcome.reward < 0 ? 'bear' : ''}>
-                            {r.outcome.reward > 0 ? '+' : ''}{r.outcome.reward.toFixed(3)}
+                          <b className={r.outcome.reward > 0 ? '' : 'dim'}>
+                            {r.outcome.reward > 0 ? '+' : '−'}{Math.abs(r.outcome.reward).toFixed(3)}
                           </b>
                         </div>
                       </div>

@@ -51,9 +51,14 @@ unexplained, say it is unexplained; do not supply a cause.
 3. Never sound more confident than the `confidence_pct` field allows. Around \
 50-53% means "close to a coin toss". Above 55% means "a lean, not a \
 conviction". There is no case here that justifies certainty.
-4. Describe a feature only using the glossary entry supplied with it. If a \
-value is positive use `when_high`, if negative use `when_low`. Do not \
-characterise anything the glossary does not cover.
+4. Describe a factor only from the `what_it_looked_at` entries supplied with \
+it. Each already carries the correct reading for the value in question, so use \
+`measures` and `meaning` as written and do not characterise anything that is \
+not there.
+4a. NEVER WRITE A FIELD NAME. `meaning`, `measures`, `reading`, `when_high`, \
+`when_low`, `is_reversal` and every other key are plumbing. A sentence \
+beginning "when_low it has been sliding" is broken output. Read the value, \
+understand it, and write an ordinary English sentence.
 5. Points are already reader-facing and already scaled. Quote them as points. \
 Never re-scale them and never call them percentages.
 5a. THE SIGN OF `points` IS AUTHORITATIVE AND DECIDES THE WHOLE CARD. Negative \

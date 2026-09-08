@@ -35,11 +35,14 @@ export default function RunView({ symbol, stages, pct, error }: Props) {
           <h2>{symbol}</h2>
         </div>
         <div className="run-pct">
-          <span>{pct}%</span>
+          <div className="run-pct-row">
+            <span className="run-pct-l">progress</span>
+            <span className="run-pct-n num">{pct}%</span>
+          </div>
           <div className="run-track">
             <motion.div className="run-fill"
               animate={{ width: `${pct}%` }}
-              transition={{ duration: 0.5, ease: EASE }} />
+              transition={{ duration: 0.6, ease: EASE }} />
           </div>
         </div>
       </div>
@@ -76,12 +79,17 @@ export default function RunView({ symbol, stages, pct, error }: Props) {
                   <div className="op-label">{s.label}</div>
                   <div className="op-doing">{s.doing}</div>
                 </div>
-                {s.ms !== undefined && (
+                {s.ms !== undefined ? (
                   <motion.div className="op-ms"
                     initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                     {s.ms < 1000 ? `${s.ms} ms` : `${(s.ms / 1000).toFixed(1)} s`}
                   </motion.div>
-                )}
+                ) : s.status === 'running' ? (
+                  <div className="op-bar">
+                    <motion.i initial={{ width: '8%' }} animate={{ width: '92%' }}
+                      transition={{ duration: 6, ease: 'linear' }} />
+                  </div>
+                ) : null}
               </motion.div>
             ))}
           </div>
@@ -103,8 +111,16 @@ export default function RunView({ symbol, stages, pct, error }: Props) {
             ))}
           </AnimatePresence>
           {!spoken.length && !error && (
-            <div className="said-empty">
-              Each step will explain itself here as it finishes.
+            <div className="said">
+              <div className="said-key">standing by</div>
+              <div className="said-skel">
+                <i className="shimmer" style={{ width: '92%' }} />
+                <i className="shimmer" style={{ width: '78%' }} />
+                <i className="shimmer" style={{ width: '86%' }} />
+              </div>
+              <p className="micro" style={{ marginTop: 12 }}>
+                Each step explains itself here as it finishes.
+              </p>
             </div>
           )}
           {error && (

@@ -73,6 +73,9 @@ def board() -> list[dict]:
         wk_pct = (last / wk - 1) * 100 if wk else 0.0
         out.append({
             "key": key, "label": PRETTY.get(key, key),
+            # Twelve sessions, for the sparkline. Shape only - the interface
+            # draws it axis-free, because 60 pixels cannot carry a level.
+            "spark": [round(float(v), 4) for v in s.iloc[-12:]],
             "value": round(last, 2),
             "chg_pct": round(pct, 2),
             "chg_week_pct": round(wk_pct, 2),

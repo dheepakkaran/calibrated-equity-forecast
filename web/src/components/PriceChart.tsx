@@ -20,10 +20,11 @@ export default function PriceChart({
   const geom = useMemo(() => {
     const pts = price.points
     if (!pts.length) return null
+    // Three reference levels, distinguished by dash rhythm rather than hue.
     const lv = [
-      { y: levels.r1, label: `${Math.round(levels.r1)} R1`, color: '#c97a82' },
-      { y: levels.pivot, label: `${Math.round(levels.pivot)} pivot`, color: '#d9a441' },
-      { y: levels.s1, label: `${Math.round(levels.s1)} S1`, color: '#5fa8a0' },
+      { y: levels.r1, label: `${Math.round(levels.r1)} upper`, dash: '2 5' },
+      { y: levels.pivot, label: `${Math.round(levels.pivot)} pivot`, dash: '6 3' },
+      { y: levels.s1, label: `${Math.round(levels.s1)} lower`, dash: '2 5' },
     ].filter((l) => Number.isFinite(l.y))
 
     const ys = pts.map((p) => p.close)
@@ -66,8 +67,8 @@ export default function PriceChart({
       <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto', display: 'block' }}>
         {geom.grid.map((g, i) => (
           <g key={i}>
-            <line x1={PAD} y1={g.y} x2={W - RIGHT} y2={g.y} stroke="#24323d" strokeWidth="1" />
-            <text x={W - RIGHT + 6} y={g.y + 3.5} fill="#647889" fontSize="9.5">
+            <line x1={PAD} y1={g.y} x2={W - RIGHT} y2={g.y} stroke="#191c1f" strokeWidth="1" />
+            <text x={W - RIGHT + 6} y={g.y + 3.5} fill="#626a71" fontSize="9.5">
               {Math.round(g.v).toLocaleString('en-IN')}
             </text>
           </g>
@@ -75,24 +76,25 @@ export default function PriceChart({
         {geom.labelled.map((l) => (
           <g key={l.label}>
             <line x1={PAD} y1={l.y} x2={W - RIGHT} y2={l.y}
-              stroke={l.color} strokeWidth="1" strokeDasharray="4 4" opacity="0.75" />
-            <text x={l.x} y={l.y - 5} fill={l.color} fontSize="9.5">{l.label}</text>
+              stroke="#626a71" strokeWidth="1" strokeDasharray={l.dash} />
+            <text x={l.x} y={l.y - 5} fill="#8d959c" fontSize="9.5">{l.label}</text>
           </g>
         ))}
-        <motion.path d={geom.path} fill="none" stroke="#9cafc1" strokeWidth="1.6"
+        <motion.path d={geom.path} fill="none" stroke="#c2c8cd" strokeWidth="1.4"
           initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}
           transition={{ duration: 1.1, ease: [0.22, 0.61, 0.36, 1] }} />
         {geom.marks.map((m, i) => (
           <motion.circle key={`${m.date}-${i}`} cx={m.cx} cy={m.cy} r={hover === i ? 6 : 4.5}
-            fill="#131c25" strokeWidth="2"
-            stroke={m.kind === 'announcement' ? '#7b95c4' : m.kind === 'driver' ? '#5fa8a0' : '#647889'}
+            fill={m.kind === 'announcement' ? '#f4f6f7' : '#08090a'}
+            strokeWidth="1.5" stroke={m.kind === 'unexplained' ? '#626a71' : '#f4f6f7'}
+            strokeDasharray={m.kind === 'unexplained' ? '2 2' : undefined}
             style={{ cursor: 'pointer' }}
             initial={{ opacity: 0, scale: 0.4 }} animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.7 + i * 0.03, type: 'spring', stiffness: 380, damping: 22 }}
             onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)} />
         ))}
-        <text x={PAD} y={H - 6} fill="#647889" fontSize="9.5">{geom.pts[0].date}</text>
-        <text x={W - RIGHT} y={H - 6} fill="#647889" fontSize="9.5" textAnchor="end">
+        <text x={PAD} y={H - 6} fill="#626a71" fontSize="9.5">{geom.pts[0].date}</text>
+        <text x={W - RIGHT} y={H - 6} fill="#626a71" fontSize="9.5" textAnchor="end">
           {geom.pts[geom.pts.length - 1].date}
         </text>
       </svg>
@@ -114,10 +116,11 @@ export default function PriceChart({
         </motion.div>
       )}
 
+      {/* Filled = a filing was found. Hollow = a driver. Dotted = nobody knows. */}
       <div className="pc-key">
-        <span><i style={{ background: '#7b95c4' }} />matched to a filing</span>
-        <span><i style={{ background: '#5fa8a0' }} />matched to a driver</span>
-        <span><i style={{ background: '#647889' }} />unexplained</span>
+        <span><i className="filled" />matched to a filing</span>
+        <span><i className="hollow" />matched to a driver</span>
+        <span><i className="hollow dotted" />unexplained</span>
       </div>
     </div>
   )

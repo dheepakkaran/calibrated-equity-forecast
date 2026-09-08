@@ -75,7 +75,7 @@ export type Move = {
 }
 
 export type BoardTile = {
-  key: string; label: string; value: number; chg_pct: number
+  key: string; label: string; value: number; spark: number[]; chg_pct: number
   chg_week_pct: number; as_of: string; lag_sessions: number; availability: string
 }
 

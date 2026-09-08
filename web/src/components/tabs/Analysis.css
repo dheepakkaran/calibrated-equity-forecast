@@ -1,52 +1,96 @@
-.an { max-width: 1120px; }
+.an { max-width: 1140px; }
 
+/* ── market board: a ticker strip, sparklines instead of colour ──── */
 .an-board {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
-  gap: 1px; background: var(--line-soft);
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(126px, 1fr));
   border: 1px solid var(--line); border-radius: var(--r-md); overflow: hidden;
 }
-.an-tile { background: var(--panel); padding: 11px 13px; }
-.an-tl { font-size: 10.5px; color: var(--ink-faint); margin-bottom: 3px;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.an-tv { font-size: 13.5px; font-weight: 500; font-variant-numeric: tabular-nums; }
-.an-tc { font-size: 11px; margin-top: 1px; font-variant-numeric: tabular-nums; }
-.an-tlag { font-size: 9.5px; color: var(--ink-faint); margin-top: 2px; }
-.up { color: var(--bull); } .dn { color: var(--bear); } .fl { color: var(--ink-dim); }
+.an-tile {
+  background: var(--surface); padding: 13px 14px;
+  border-right: 1px solid var(--line-soft); border-bottom: 1px solid var(--line-soft);
+  position: relative;
+}
+.an-tl {
+  font-size: 10px; color: var(--ink-4); margin-bottom: 5px;
+  letter-spacing: 0.05em; text-transform: uppercase;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.an-tv { font-size: 14.5px; font-weight: 500; font-variant-numeric: tabular-nums; letter-spacing: -0.012em; }
+.an-trow { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+.an-tc {
+  font-size: 11px; font-variant-numeric: tabular-nums;
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.an-tc::before { font-size: 0.78em; }
+.an-tc.up { color: var(--ink-2); }
+.an-tc.up::before { content: '▲'; }
+.an-tc.dn { color: var(--ink-4); }
+.an-tc.dn::before { content: '▽'; }
+.an-tc.fl { color: var(--ink-4); }
+.an-tc.fl::before { content: '·'; }
+.an-tspark { margin-left: auto; color: var(--ink-3); }
+/* A dotted underline marks a series read at a lag — the reader can tell at a
+   glance which tiles were knowable at the Indian close. */
+.an-tile.is-lagged .an-tl { border-bottom: 1px dotted var(--n5); padding-bottom: 3px; display: inline-block; }
+.an-tlag { font-size: 9.5px; color: var(--n5); margin-top: 3px; }
 
-.an-aname { font-weight: 500; }
-.an-aev { font-size: 11px; color: var(--ink-faint); margin-top: 3px; line-height: 1.5; }
-.an-bar { position: relative; height: 6px; background: var(--line-soft); border-radius: 3px; }
-.an-bar i { position: absolute; top: 0; height: 6px; border-radius: 3px; display: block; }
-.an-mid { position: absolute; top: -3px; left: 50%; width: 1px; height: 12px; background: var(--ink-faint); }
-.an-pts { font-weight: 500; }
-.an-pts.p { color: var(--bull); } .an-pts.n { color: var(--bear); }
-.an-net td { padding-top: 12px !important; font-weight: 600; border-top: 1px solid var(--line); }
+/* ── aspects ─────────────────────────────────────────────────────── */
+.an-aname { font-weight: 500; font-size: 13px; }
+.an-aev {
+  font-size: 10.5px; color: var(--ink-4); margin-top: 4px; line-height: 1.55;
+  font-family: 'IBM Plex Mono', monospace; word-break: break-word;
+}
+.an-bar { position: relative; height: 1px; background: var(--line); margin: 8px 0; }
+.an-bar i { position: absolute; top: -3px; height: 7px; display: block; }
+.an-bar i.pos { background: var(--ink); }
+.an-bar i.neg {
+  background-image: repeating-linear-gradient(45deg, var(--n7) 0 2px, transparent 2px 4px);
+  border-top: 1px solid var(--n6); border-bottom: 1px solid var(--n6);
+}
+.an-mid { position: absolute; top: -5px; left: 50%; width: 1px; height: 11px; background: var(--n6); }
+.an-pts { font-weight: 500; font-variant-numeric: tabular-nums; }
+.an-pts.n { color: var(--ink-3); }
+.an-net td { padding-top: 13px !important; font-weight: 600; border-top: 1px solid var(--line); }
 
-.an-drv { display: flex; align-items: center; gap: 11px; padding: 9px 0;
-  border-bottom: 1px solid var(--line-soft); font-size: 12.5px; }
+/* ── drivers ─────────────────────────────────────────────────────── */
+.an-drv {
+  display: flex; align-items: center; gap: 12px; padding: 11px 0;
+  border-bottom: 1px solid var(--line-soft); font-size: 12.5px;
+}
 .an-drv:last-of-type { border-bottom: none; }
 .an-dname { flex: 1; }
-.an-dbar { width: 76px; height: 5px; background: var(--line-soft); border-radius: 3px; position: relative; }
-.an-dbar i { position: absolute; left: 0; top: 0; height: 5px; border-radius: 3px; display: block; }
-.an-dcorr { width: 50px; text-align: right; color: var(--ink-dim); font-size: 11.5px; }
-.an-dchg { width: 60px; text-align: right; font-weight: 500; }
+.an-dbar { width: 80px; height: 1px; background: var(--line); position: relative; }
+.an-dbar i { position: absolute; left: 0; top: -2px; height: 5px; display: block; background: var(--n7); }
+.an-dbar i.neg { background-image: repeating-linear-gradient(45deg, var(--n6) 0 2px, transparent 2px 4px); }
+.an-dcorr { width: 52px; text-align: right; color: var(--ink-3); font-size: 11.5px; font-variant-numeric: tabular-nums; }
+.an-dchg { width: 62px; text-align: right; font-weight: 500; font-variant-numeric: tabular-nums; }
 
-.an-kv { display: flex; justify-content: space-between; align-items: center;
-  gap: 10px; padding: 7px 0; font-size: 12.5px; }
-.an-kv > span:first-child { color: var(--ink-dim); }
-.an-kv b { font-variant-numeric: tabular-nums; font-weight: 500; }
-.an-w { color: var(--ink-faint); font-weight: 400; }
-.an-sep { height: 1px; background: var(--line-soft); margin: 10px 0; }
-
-.pc-tip {
-  position: absolute; left: 12px; right: 12px; bottom: 34px;
-  background: var(--panel-2); border: 1px solid var(--line);
-  border-radius: var(--r-sm); padding: 11px 13px; pointer-events: none;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+.an-kv {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 12px; padding: 9px 0; font-size: 12.5px;
+  border-bottom: 1px solid var(--line-soft);
 }
-.pc-tip-top { display: flex; align-items: baseline; gap: 10px; margin-bottom: 5px; font-size: 12.5px; }
+.an-kv:last-of-type { border-bottom: none; }
+.an-kv > span:first-child { color: var(--ink-4); }
+.an-kv b { font-variant-numeric: tabular-nums; font-weight: 500; }
+.an-w { color: var(--ink-4); font-weight: 400; }
+.an-sep { height: 1px; background: var(--line); margin: 12px 0; }
+
+/* ── chart tooltip ───────────────────────────────────────────────── */
+.pc-tip {
+  position: absolute; left: 10px; right: 10px; bottom: 36px;
+  background: var(--surface-2); border: 1px solid var(--line);
+  border-radius: var(--r-sm); padding: 12px 14px; pointer-events: none;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+}
+.pc-tip-top { display: flex; align-items: baseline; gap: 11px; margin-bottom: 6px; font-size: 12.5px; }
 .pc-tip-top b { font-weight: 500; }
-.pc-tip p { font-size: 12px; color: var(--ink-dim); line-height: 1.55; }
-.pc-key { display: flex; gap: 16px; margin-top: 10px; font-size: 11.5px; color: var(--ink-dim); flex-wrap: wrap; }
-.pc-key span { display: flex; align-items: center; gap: 6px; }
-.pc-key i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.pc-tip-top .up { color: var(--ink); }
+.pc-tip-top .dn { color: var(--ink-3); }
+.pc-tip p { font-size: 12px; color: var(--ink-3); line-height: 1.6; }
+.pc-key { display: flex; gap: 18px; margin-top: 12px; font-size: 11.5px; color: var(--ink-4); flex-wrap: wrap; }
+.pc-key span { display: flex; align-items: center; gap: 7px; }
+.pc-key i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; border: 1.5px solid currentColor; }
+.pc-key i.filled { background: currentColor; }
+.pc-key i.hollow { background: transparent; }
+.pc-key i.dotted { border-style: dotted; }

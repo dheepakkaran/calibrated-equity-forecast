@@ -1,76 +1,87 @@
-.result { min-height: 100%; padding: 26px clamp(18px, 4vw, 44px) 96px; }
+.result { min-height: 100%; padding: 30px clamp(18px, 4vw, 48px) 110px; }
 
 .res-head {
-  display: flex; align-items: flex-start; gap: 20px;
-  flex-wrap: wrap; padding-bottom: 18px;
+  display: flex; align-items: flex-start; gap: 22px;
+  flex-wrap: wrap; padding-bottom: 22px;
 }
-.res-id h2 { font-size: clamp(22px, 3vw, 30px); font-weight: 600; letter-spacing: -0.024em; }
-.res-meta { display: block; font-size: 12.5px; color: var(--ink-faint); margin-top: 5px; }
-.res-actions { margin-left: auto; display: flex; gap: 9px; }
+.res-id h2 {
+  font-size: clamp(24px, 3.2vw, 34px); font-weight: 600;
+  letter-spacing: -0.03em; line-height: 1;
+}
+.res-meta { display: block; font-size: 12.5px; color: var(--ink-4); margin-top: 8px; }
+.res-actions { margin-left: auto; display: flex; gap: 8px; }
 
 .res-tabs {
-  display: flex; align-items: flex-end; gap: 4px;
-  border-bottom: 1px solid var(--line); margin-bottom: 26px;
-  flex-wrap: wrap;
+  display: flex; align-items: flex-end; gap: 2px;
+  border-bottom: 1px solid var(--line); margin-bottom: 30px; flex-wrap: wrap;
 }
 .res-tab {
-  position: relative; padding: 10px 16px 13px; text-align: left;
-  color: var(--ink-faint); transition: color 0.16s;
+  position: relative; padding: 11px 17px 14px; text-align: left;
+  color: var(--ink-4); transition: color 0.18s;
 }
-.res-tab:hover { color: var(--ink-dim); }
+.res-tab:hover { color: var(--ink-3); }
 .res-tab.on { color: var(--ink); }
-.rt-label { display: block; font-size: 14.5px; font-weight: 500; }
-.rt-sub { display: block; font-size: 11.5px; color: var(--ink-faint); margin-top: 2px; }
+.rt-label { display: block; font-size: 14px; font-weight: 500; letter-spacing: -0.006em; }
+.rt-sub { display: block; font-size: 11px; color: var(--ink-4); margin-top: 3px; }
 .rt-underline {
-  position: absolute; left: 12px; right: 12px; bottom: -1px;
-  height: 2px; background: var(--info); border-radius: 2px;
+  position: absolute; left: 0; right: 0; bottom: -1px;
+  height: 1px; background: var(--ink);
 }
 .res-elapsed {
-  margin-left: auto; align-self: center; font-size: 11.5px;
-  color: var(--ink-faint); padding-bottom: 10px;
-  font-variant-numeric: tabular-nums;
+  margin-left: auto; align-self: center; padding-bottom: 12px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+  color: var(--ink-4); font-variant-numeric: tabular-nums;
 }
 
-.res-body { max-width: 1120px; }
+.res-body { max-width: 1140px; }
 
 /* ── shared tab furniture ────────────────────────────────────────── */
-.sect { margin-bottom: 30px; }
-.sect-head { font-size: 17px; font-weight: 600; letter-spacing: -0.012em; margin-bottom: 5px; }
-.sect-sub { font-size: 13.5px; color: var(--ink-faint); margin-bottom: 16px; max-width: 74ch; }
+.sect { margin-bottom: 34px; }
+.sect-head {
+  font-size: 16.5px; font-weight: 600; letter-spacing: -0.016em;
+  margin-bottom: 6px; display: flex; align-items: center; gap: 13px;
+}
+.sect-head::after { content: ''; flex: 1; height: 1px; background: var(--line-soft); }
+.sect-sub { font-size: 13px; color: var(--ink-4); margin-bottom: 18px; max-width: 76ch; line-height: 1.65; }
 
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+
 .tiles {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(152px, 1fr));
-  gap: 1px; background: var(--line-soft);
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   border: 1px solid var(--line); border-radius: var(--r-md); overflow: hidden;
 }
-.tile { background: var(--panel); padding: 15px 17px; }
-.tile-n { font-size: 21px; font-weight: 600; letter-spacing: -0.018em; line-height: 1.12; }
-.tile-n.warn { color: var(--warn); }
-.tile-n.dim { color: var(--ink-dim); }
-.tile-n.bull { color: var(--bull); }
-.tile-n.bear { color: var(--bear); }
-.tile-l { font-size: 11.5px; color: var(--ink-faint); margin-top: 5px; line-height: 1.45; }
+.tile {
+  background: var(--surface); padding: 16px 18px;
+  border-right: 1px solid var(--line-soft); border-bottom: 1px solid var(--line-soft);
+}
+.tile-n { font-size: 22px; font-weight: 600; letter-spacing: -0.024em; line-height: 1.1; }
+.tile-n.dim { color: var(--ink-4); }
+.tile-n.hollow { color: var(--ink-3); }
+.tile-l { font-size: 11px; color: var(--ink-4); margin-top: 7px; line-height: 1.5; }
 
 table.d { width: 100%; border-collapse: collapse; font-size: 12.5px; }
 table.d th {
-  text-align: left; font-weight: 500; color: var(--ink-faint); font-size: 11px;
-  padding: 0 9px 8px 0; border-bottom: 1px solid var(--line-soft); white-space: nowrap;
+  text-align: left; font-weight: 500; color: var(--ink-4); font-size: 10.5px;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 0 10px 9px 0; border-bottom: 1px solid var(--line); white-space: nowrap;
 }
-table.d td { padding: 9px 9px 9px 0; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
+table.d td { padding: 10px 10px 10px 0; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
 table.d tr:last-child td { border-bottom: none; }
 table.d th:last-child, table.d td:last-child { text-align: right; padding-right: 0; }
-td.num, .num { font-variant-numeric: tabular-nums; }
+td.num { font-variant-numeric: tabular-nums; }
 
-.verify {
-  background: var(--info-soft); border: 1px solid rgba(123, 149, 196, 0.26);
-  border-radius: var(--r-sm); padding: 13px 15px;
-  font-size: 12.5px; color: var(--ink-dim); line-height: 1.6; margin-top: 14px;
+/* An aside, not a coloured callout. The left rule does the work a background
+   tint would have done. */
+.note {
+  border-left: 1px solid var(--n5); padding: 2px 0 2px 16px;
+  font-size: 12.5px; color: var(--ink-3); line-height: 1.68; margin-top: 16px;
+  max-width: 82ch;
 }
-.verify b { color: var(--ink); font-weight: 500; }
+.note b { color: var(--ink); font-weight: 500; }
+.note em { font-style: italic; color: var(--ink-2); }
 
-@media (max-width: 860px) {
+@media (max-width: 880px) {
   .grid-2, .grid-3 { grid-template-columns: 1fr; }
   .res-elapsed { display: none; }
 }

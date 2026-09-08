@@ -424,9 +424,36 @@ have no source listed rather than hidden, every market series with the lag it
 was read at, the model's own provenance, and the panels this system does not
 have.
 
-React 19 + Framer Motion, built to static files that FastAPI serves. Motion
-carries meaning — a stage that finishes settles, a panel arrives from the
-direction it came from — and never decorates.
+React 19 + Framer Motion, built to static files that FastAPI serves.
+
+### Monochrome, on purpose
+
+The interface is pure greyscale. Removing colour removes the easiest channel
+for encoding meaning, so everything colour was carrying had to be re-encoded
+structurally — which is the better design anyway, because it survives a
+greyscale print, a colour-blind reader and a bad projector:
+
+| was | is now |
+|---|---|
+| teal / rose for direction | **glyph and fill** — ▲ solid for, ▽ hollow against, ◇ no call |
+| amber for uncertainty | **texture** — the coin-flip band is drawn as diagonal hatching, a provisional reading gets a dashed border |
+| coloured accent for emphasis | **inversion** — black-on-white, spent on exactly one element per screen |
+| coloured bars in the attribution table | **solid vs hatched** — a hatched bar is a factor working against the share |
+| coloured chart markers | **filled / hollow / dotted** — a filing, a driver, or nobody knows |
+
+Hierarchy runs on a deliberate nine-step neutral ramp and on weight. The
+typeface is IBM Plex throughout, Mono for anything a reader might compare
+digit by digit.
+
+Other techniques earning their place: spring-driven counters so a figure reads
+as *measured*; pointer-tracked spotlights on panels via registered
+`@property` custom properties; scroll-driven reveals through
+`animation-timeline: view()` with no JS; a ⌘K command palette; axis-free
+sparklines on the market board; `text-wrap: balance` on headlines and `pretty`
+on prose; and a very low-amplitude grain field, because in monochrome a large
+flat panel otherwise reads as dead pixels. Motion carries meaning — a stage
+that finishes settles, a panel arrives from the direction it came from — and
+`prefers-reduced-motion` switches all of it off.
 
 ---
 

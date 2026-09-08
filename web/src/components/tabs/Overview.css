@@ -1,101 +1,115 @@
-.ov { max-width: 860px; }
+.ov { max-width: 880px; }
 
-.ov-answer {
-  background: var(--panel); border: 1px solid var(--line);
-  border-radius: var(--r-md); padding: 27px 26px; margin-bottom: 28px;
-}
-.ov-who { font-size: 13px; color: var(--ink-faint); margin-bottom: 14px; }
-.ov-who b { color: var(--ink-dim); font-weight: 500; }
+/* ── the answer ──────────────────────────────────────────────────── */
+.ov-answer { padding-bottom: 32px; border-bottom: 1px solid var(--line); margin-bottom: 34px; }
+.ov-who { font-size: 12.5px; color: var(--ink-4); margin-bottom: 20px; }
+.ov-who b { color: var(--ink-3); font-weight: 500; }
 .ov-big {
-  font-size: clamp(21px, 2.8vw, 27px); font-weight: 600;
-  letter-spacing: -0.022em; line-height: 1.34; margin-bottom: 15px;
+  font-size: clamp(24px, 3.4vw, 34px); font-weight: 600;
+  letter-spacing: -0.03em; line-height: 1.24; margin-bottom: 20px;
+  text-wrap: balance;
 }
-.ov-big em { font-style: normal; }
-.ov-big em.up { color: var(--bull); }
-.ov-big em.dn { color: var(--bear); }
-.ov-big em.none { color: var(--warn); }
-.ov-plain { font-size: 15px; color: var(--ink-dim); line-height: 1.7; max-width: 68ch; }
+/* The verdict phrase is marked by an underline and an arrow glyph rather than
+   a colour, so it survives greyscale and reads the same to everyone. */
+.ov-big em {
+  font-style: normal; position: relative; white-space: normal;
+  box-shadow: inset 0 -2px 0 var(--n6);
+}
+.ov-big em::after { font-size: 0.6em; vertical-align: 0.28em; margin-left: 0.32em; }
+.ov-big em.up::after { content: '▲'; }
+.ov-big em.dn::after { content: '▽'; }
+.ov-big em.none::after { content: '◇'; }
+.ov-plain { font-size: 15.5px; color: var(--ink-3); line-height: 1.76; max-width: 68ch; text-wrap: pretty; }
 
 .ov-sure {
-  margin-top: 22px; padding-top: 20px; border-top: 1px solid var(--line-soft);
-  display: flex; align-items: center; gap: 22px; flex-wrap: wrap;
+  margin-top: 28px; display: flex; align-items: flex-start;
+  gap: clamp(20px, 3vw, 32px); flex-wrap: wrap;
 }
 .ov-no {
-  font-size: 38px; font-weight: 600; color: var(--warn);
-  letter-spacing: -0.03em; line-height: 1; flex: none;
+  font-size: clamp(38px, 5vw, 52px); font-weight: 600;
+  letter-spacing: -0.038em; line-height: 0.92; flex: none;
 }
-.ov-no.none { font-size: 27px; color: var(--ink-faint); }
-.ov-sure p { font-size: 14px; color: var(--ink-dim); max-width: 52ch; line-height: 1.6; }
+.ov-no.none { font-size: clamp(22px, 3vw, 28px); color: var(--ink-4); letter-spacing: -0.02em; }
+.ov-no-l { font-size: 11px; color: var(--ink-4); letter-spacing: 0.11em; text-transform: uppercase; margin-top: 10px; }
+.ov-sure p { font-size: 14px; color: var(--ink-3); max-width: 54ch; line-height: 1.7; }
 
+/* ── tally ───────────────────────────────────────────────────────── */
 .ov-tally {
-  display: flex; border: 1px solid var(--line);
-  border-radius: var(--r-md); overflow: hidden; margin-bottom: 18px;
+  display: flex; border: 1px solid var(--line); border-radius: var(--r-md);
+  overflow: hidden; margin-bottom: 22px;
 }
-.ov-side { flex: 1; padding: 17px 20px; background: var(--panel); }
-.ov-side.up { border-right: 1px solid var(--line); }
-.ov-lbl { font-size: 13px; color: var(--ink-dim); margin-bottom: 6px; }
-.ov-pts { font-size: 30px; font-weight: 600; letter-spacing: -0.02em; line-height: 1; }
-.ov-pts.p { color: var(--bull); }
-.ov-pts.n { color: var(--bear); }
-.ov-cnt { font-size: 12.5px; color: var(--ink-faint); margin-top: 5px; }
+.ov-side { flex: 1; padding: 18px 20px; background: var(--surface); position: relative; }
+.ov-side + .ov-side { border-left: 1px solid var(--line); }
+.ov-lbl { font-size: 12px; color: var(--ink-4); margin-bottom: 8px; display: flex; align-items: center; gap: 7px; }
+.ov-pts { font-size: 30px; font-weight: 600; letter-spacing: -0.028em; line-height: 1; }
+.ov-cnt { font-size: 12px; color: var(--ink-4); margin-top: 7px; }
+/* A proportion bar under each side, so the two totals can be compared at a
+   glance without doing arithmetic. */
+.ov-side-bar { position: absolute; left: 0; bottom: 0; height: 2px; background: var(--n6); }
 
+/* ── reason cards ────────────────────────────────────────────────── */
 .ov-reason {
-  background: var(--panel); border: 1px solid var(--line);
-  border-radius: var(--r-sm); padding: 17px 19px; margin-bottom: 11px;
-  display: flex; gap: 17px; align-items: flex-start;
+  display: flex; gap: 20px; align-items: flex-start;
+  padding: 20px 0; border-bottom: 1px solid var(--line-soft);
 }
-.ov-reason.pos { border-left: 3px solid var(--bull); }
-.ov-reason.neg { border-left: 3px solid var(--bear); }
-.ov-score { min-width: 56px; text-align: center; padding-top: 2px; flex: none; }
-.ov-score .v { font-size: 19px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
-.ov-score .v.p { color: var(--bull); }
-.ov-score .v.n { color: var(--bear); }
-.ov-score .u { font-size: 10.5px; color: var(--ink-faint); margin-top: 3px; }
+.ov-reason:last-of-type { border-bottom: none; }
+.ov-score { min-width: 74px; flex: none; text-align: right; }
+.ov-score .v { font-size: 20px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
+.ov-score .v.n { color: var(--ink-3); }
+.ov-score .u { font-size: 10px; color: var(--ink-4); margin-top: 4px; letter-spacing: 0.08em; text-transform: uppercase; }
+/* Direction is a glyph in the gutter. Solid triangle for, hollow for against —
+   the same convention the rest of the app uses. */
+.ov-score .g { font-size: 11px; margin-top: 7px; color: var(--ink-4); }
 .ov-txt { flex: 1; min-width: 0; }
-.ov-txt h4 { font-size: 14.5px; font-weight: 600; margin-bottom: 6px; line-height: 1.4; }
-.ov-txt p { font-size: 13.5px; color: var(--ink-dim); line-height: 1.7; }
-.ov-rev { margin-top: 10px; margin-right: 8px; }
+.ov-txt h4 { font-size: 15px; font-weight: 600; margin-bottom: 8px; line-height: 1.42; letter-spacing: -0.012em; }
+.ov-txt p { font-size: 13.5px; color: var(--ink-3); line-height: 1.76; max-width: 64ch; text-wrap: pretty; }
+.ov-tags { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; align-items: center; }
 .ov-cite {
-  display: inline-flex; align-items: center; gap: 6px;
-  font-size: 11.5px; color: var(--info); margin-top: 10px; text-decoration: none;
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 11.5px; color: var(--ink-3); text-decoration: none;
 }
-.ov-cite::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--info); }
-a.ov-cite:hover { text-decoration: underline; }
+.ov-cite::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: var(--n6); }
+a.ov-cite:hover { color: var(--ink); text-decoration: underline; }
 
+/* ── teaching box ────────────────────────────────────────────────── */
 .ov-means {
-  background: var(--warn-soft); border: 1px solid rgba(217, 164, 65, 0.26);
-  border-radius: var(--r-md); padding: 22px 24px; margin-bottom: 30px;
+  border: 1px solid var(--line); border-radius: var(--r-md);
+  padding: 24px 26px; margin-bottom: 34px; background: var(--surface);
+  position: relative; overflow: hidden;
 }
-.ov-means h3 { font-size: 16px; font-weight: 600; color: var(--warn); margin-bottom: 12px; line-height: 1.35; }
-.ov-means p { font-size: 14px; color: var(--ink-dim); line-height: 1.7; max-width: 70ch; }
-.ov-means p + p { margin-top: 11px; }
-
-.ov-lvl {
-  background: var(--panel); border: 1px solid var(--line);
-  border-radius: var(--r-sm); padding: 16px 18px;
+.ov-means::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px;
+  background: repeating-linear-gradient(180deg, var(--n6) 0 4px, transparent 4px 8px);
 }
-.ov-lvl .k { font-size: 11.5px; color: var(--ink-faint); margin-bottom: 4px; }
-.ov-lvl .n { font-size: 20px; font-weight: 600; margin-bottom: 5px; font-variant-numeric: tabular-nums; }
-.ov-lvl .n.up { color: var(--bull); }
-.ov-lvl .n.mid { color: var(--warn); }
-.ov-lvl .n.dn { color: var(--bear); }
-.ov-lvl .d { font-size: 12.5px; color: var(--ink-dim); line-height: 1.58; }
+.ov-means h3 { font-size: 16px; font-weight: 600; margin-bottom: 14px; line-height: 1.4; letter-spacing: -0.014em; }
+.ov-means p { font-size: 14px; color: var(--ink-3); line-height: 1.76; max-width: 72ch; text-wrap: pretty; }
+.ov-means p + p { margin-top: 12px; }
 
+/* ── levels ──────────────────────────────────────────────────────── */
+.ov-lvl { border: 1px solid var(--line); border-radius: var(--r-md); padding: 17px 19px; background: var(--surface); }
+.ov-lvl .k { font-size: 11px; color: var(--ink-4); margin-bottom: 6px; letter-spacing: 0.05em; text-transform: uppercase; }
+.ov-lvl .n { font-size: 21px; font-weight: 600; margin-bottom: 7px; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.ov-lvl .d { font-size: 12.5px; color: var(--ink-3); line-height: 1.62; }
+
+/* ── the closing guess: the one inverted block on the page ───────── */
 .ov-closing {
-  background: var(--panel-2); border: 1px solid var(--line);
-  border-radius: var(--r-md); padding: 21px 24px; margin-bottom: 22px;
+  background: var(--ink); color: var(--n0);
+  border-radius: var(--r-md); padding: 24px 26px; margin-bottom: 26px;
 }
-.ov-closing p { font-size: 15.5px; line-height: 1.72; max-width: 74ch; margin-top: 9px; }
+.ov-closing .eyebrow { color: rgba(8, 9, 10, 0.5); }
+.ov-closing p {
+  font-size: 16px; line-height: 1.68; max-width: 72ch; margin-top: 11px;
+  font-weight: 400; letter-spacing: -0.008em; text-wrap: pretty;
+}
 
-.ov-disc { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line-soft); }
-.ov-prov { margin-top: 12px; }
-.ov-prov b { color: var(--ink-dim); font-weight: 500; }
-.ov-warn { color: var(--warn); }
+.ov-disc { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--line-soft); }
+.ov-prov { margin-top: 14px; }
+.ov-prov b { color: var(--ink-3); font-weight: 500; }
+.ov-warn { color: var(--ink-2); box-shadow: inset 0 -1px 0 var(--n6); }
 
 @media (max-width: 700px) {
   .ov-tally { flex-direction: column; }
-  .ov-side.up { border-right: none; border-bottom: 1px solid var(--line); }
-  .ov-reason { flex-direction: column; gap: 10px; }
-  .ov-score { display: flex; gap: 8px; align-items: baseline; text-align: left; min-width: 0; }
-  .ov-score .u { margin-top: 0; }
+  .ov-side + .ov-side { border-left: none; border-top: 1px solid var(--line); }
+  .ov-reason { gap: 14px; }
+  .ov-score { min-width: 56px; }
 }

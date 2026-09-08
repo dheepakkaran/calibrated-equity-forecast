@@ -1,9 +1,11 @@
 import { AnimatePresence } from 'framer-motion'
 import { useCallback, useRef, useState } from 'react'
+import CommandPalette from './components/CommandPalette'
 import Landing from './components/Landing'
 import LedgerDrawer from './components/LedgerDrawer'
 import Result from './components/Result'
 import RunView, { type RunStage } from './components/RunView'
+import { useHotkey, useScrollProgress } from './components/ui'
 import { streamAnalysis } from './lib/api'
 import type { Payload, StreamEvent } from './lib/types'
 
@@ -18,7 +20,11 @@ export default function App() {
   const [data, setData] = useState<Payload | null>(null)
   const [elapsed, setElapsed] = useState(0)
   const [ledger, setLedger] = useState(false)
+  const [palette, setPalette] = useState(false)
   const cancel = useRef<(() => void) | null>(null)
+  const scrolled = useScrollProgress()
+
+  useHotkey('k', () => setPalette((o) => !o))
 
   const run = useCallback((sym: string) => {
     cancel.current?.()
@@ -54,6 +60,12 @@ export default function App() {
 
   return (
     <>
+      {/* A one-pixel rule rather than a coloured bar. It is the only
+          persistent chrome on the page. */}
+      {phase === 'result' && (
+        <div className="scrollbar-top"><i style={{ width: `${scrolled * 100}%` }} /></div>
+      )}
+
       <AnimatePresence mode="wait">
         {phase === 'landing' && (
           <Landing key="landing" onRun={run} onOpenLedger={() => setLedger(true)} />
@@ -67,6 +79,7 @@ export default function App() {
         )}
       </AnimatePresence>
       <LedgerDrawer open={ledger} onClose={() => setLedger(false)} />
+      <CommandPalette open={palette} onClose={() => setPalette(false)} onPick={run} />
     </>
   )
 }

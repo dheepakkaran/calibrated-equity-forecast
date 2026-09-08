@@ -142,3 +142,38 @@ def test_verifier_catches_an_invented_number():
            "closing": "Profit rose 145% last quarter.",
            "reasons": [], "explainer": {"paragraphs": []}, "levels": []}
     assert "145" in verify(out, ev)
+
+
+# --------------------------------------------------------------------------
+# Field names are plumbing and must never reach the reader.
+# --------------------------------------------------------------------------
+def test_prompt_does_not_name_internal_fields_the_reader_could_see():
+    """The prompt used to say "if positive use `when_high`, if negative use
+    `when_low`" — and the model dutifully wrote "when_low it has been sliding"
+    into a reason card. Naming a plumbing key in the instructions invites it
+    into the prose, so the evidence resolves the reading itself and the prompt
+    never mentions the key.
+
+    `measures` and `meaning` are deliberately excluded from this check: they
+    are ordinary English words a good sentence may legitimately contain
+    ("both measures of the market show weakness").
+    """
+    from cef.evidence.simple import SYSTEM_PROMPT
+
+    for key in ("when_high", "when_low", "is_reversal",
+                "what_it_looked_at", "points_and_probability_agree"):
+        assert f"`{key}`" not in SYSTEM_PROMPT or "NEVER WRITE A FIELD NAME" in SYSTEM_PROMPT, (
+            f"the prompt names {key} in a way that invites it into the output")
+    assert "NEVER WRITE A FIELD NAME" in SYSTEM_PROMPT
+
+
+def test_described_readings_carry_resolved_meaning_not_keys():
+    """Each reading handed to the model already holds the correct meaning for
+    its value, so the model never has to choose between two glossary keys."""
+    ev = build_evidence(_forecast(0.49), [], [], {}, {})
+    looked = ev["reasons"][0]["what_it_looked_at"]
+    assert looked, "a reason with evidence should describe what it looked at"
+    for r in looked:
+        assert set(r) == {"measures", "reading", "meaning", "value"}
+        assert r["reading"] in {"high", "low"}
+        assert r["meaning"] and "when_" not in r["meaning"]

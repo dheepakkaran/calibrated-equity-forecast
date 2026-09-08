@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import type { Payload } from '../../lib/types'
+import { Panel } from '../ui'
 import './Sources.css'
 
 const EASE = [0.22, 0.61, 0.36, 1] as const
@@ -28,9 +29,9 @@ export default function Sources({ data }: { data: Payload }) {
             <div className="src-meta">
               <div className="src-date">{m.date}</div>
               <div className={`src-move ${m.ret > 0 ? 'up' : 'dn'}`}>
-                {m.ret > 0 ? '+' : ''}{(m.ret * 100).toFixed(2)}%
+                {Math.abs(m.ret * 100).toFixed(2)}%
               </div>
-              <div className="micro">{m.sigma}σ</div>
+              <div className="src-sig">{m.sigma}σ</div>
             </div>
             <div className="src-body">
               <p className="src-head">{m.headline}</p>
@@ -41,7 +42,7 @@ export default function Sources({ data }: { data: Payload }) {
                 </a>
               )}
             </div>
-            <div className={`pill ${m.band === 'high' ? 'bull' : m.band === 'medium' ? 'warn' : 'flat'}`}>
+            <div className={m.band === 'high' ? 'chip solid' : m.band === 'medium' ? 'chip strong' : 'chip hatch'}>
               {m.band} {m.confidence.toFixed(2)}
             </div>
           </motion.div>
@@ -56,15 +57,15 @@ export default function Sources({ data }: { data: Payload }) {
           information, and a system that only showed the moves it could account
           for would be describing a tidier market than the real one.
         </div>
-        <div className="card">
+        <Panel>
           <table className="d">
             <thead><tr><th>Date</th><th>Move</th><th>Size</th><th>Searched</th></tr></thead>
             <tbody>
               {unexplained.map((m, i) => (
                 <tr key={m.date + i}>
                   <td className="num">{m.date}</td>
-                  <td className={`num ${m.ret > 0 ? 'up' : 'dn'}`}>
-                    {m.ret > 0 ? '+' : ''}{(m.ret * 100).toFixed(2)}%
+                  <td className={`num an-tc ${m.ret > 0 ? 'up' : 'dn'}`}>
+                    {Math.abs(m.ret * 100).toFixed(2)}%
                   </td>
                   <td className="num">{m.sigma}σ</td>
                   <td className="micro">{m.rationale}</td>
@@ -73,7 +74,7 @@ export default function Sources({ data }: { data: Payload }) {
               {!unexplained.length && <tr><td className="micro">Everything in this window had a match.</td></tr>}
             </tbody>
           </table>
-        </div>
+        </Panel>
       </div>
 
       {/* ── market data provenance ──────────────────────────────── */}
@@ -84,7 +85,7 @@ export default function Sources({ data }: { data: Payload }) {
           place look-ahead bias would enter, so it is stated per series rather
           than assumed.
         </div>
-        <div className="card">
+        <Panel>
           <table className="d">
             <thead><tr><th>Series</th><th>Source</th><th>Read at</th><th>Last value</th></tr></thead>
             <tbody>
@@ -98,7 +99,7 @@ export default function Sources({ data }: { data: Payload }) {
               ))}
             </tbody>
           </table>
-        </div>
+        </Panel>
       </div>
 
       {/* ── coverage ────────────────────────────────────────────── */}
@@ -113,12 +114,12 @@ export default function Sources({ data }: { data: Payload }) {
             <div className="tile-l">Corporate actions<br />splits, dividends, bonuses</div></div>
           <div className="tile"><div className="tile-n">{c.significant_moves ?? 0}</div>
             <div className="tile-l">Moves beyond 2σ</div></div>
-          <div className="tile"><div className="tile-n bull">{c.explained ?? 0}</div>
+          <div className="tile"><div className="tile-n">{c.explained ?? 0}</div>
             <div className="tile-l">Matched to a cause</div></div>
           <div className="tile"><div className="tile-n dim">{c.unexplained ?? 0}</div>
             <div className="tile-l">Left unexplained</div></div>
         </div>
-        <div className="verify">
+        <div className="note">
           <b>Attribution is correlational, not causal.</b> A high score means a
           filing was found close in time whose materiality and direction fit the
           move — not that it caused it. Two thirds of NSE filings arrive after the
@@ -165,13 +166,13 @@ export default function Sources({ data }: { data: Payload }) {
           Stated rather than filled with something plausible. A dashboard whose
           argument is calibrated honesty cannot carry invented tiles.
         </div>
-        <div className="card src-nb">
+        <Panel className="src-nb">
           {data.not_built.map((n) => (
             <div className="src-nbrow" key={n.panel}>
               <b>{n.panel}</b><p>{n.reason}</p>
             </div>
           ))}
-        </div>
+        </Panel>
       </div>
     </div>
   )

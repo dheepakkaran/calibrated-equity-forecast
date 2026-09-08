@@ -1,40 +1,61 @@
 .track {
-  position: fixed; right: clamp(16px, 3vw, 34px); bottom: clamp(16px, 3vw, 28px);
-  z-index: 40; max-width: 340px; display: flex; flex-direction: column;
-  align-items: flex-end; gap: 9px;
+  position: fixed; right: clamp(16px, 3vw, 36px); bottom: clamp(16px, 3vw, 30px);
+  z-index: 40; max-width: 356px; display: flex; flex-direction: column;
+  align-items: flex-end; gap: 10px;
 }
 .track-btn {
-  display: inline-flex; align-items: center; gap: 10px;
-  font-size: 13px; font-weight: 500; color: var(--ink);
-  background: var(--panel-2); border: 1px solid var(--line);
-  border-radius: 22px; padding: 11px 18px;
-  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.42);
-  text-align: left;
+  display: inline-flex; align-items: center; gap: 11px;
+  font-size: 13px; font-weight: 500; letter-spacing: -0.005em;
+  color: var(--n0); background: var(--ink);
+  border: 1px solid var(--ink); border-radius: 24px; padding: 11px 19px;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.6);
+  text-align: left; text-decoration: none;
 }
-.track-btn:hover { border-color: var(--info); }
+.track-btn:hover { background: #fff; }
+/* A slow pulse. The one animated affordance on the screen, so it reads as an
+   invitation rather than as decoration. */
 .track-dot {
-  width: 7px; height: 7px; border-radius: 50%; background: var(--info); flex: none;
-  box-shadow: 0 0 0 3px rgba(123, 149, 196, 0.18);
+  width: 7px; height: 7px; border-radius: 50%; background: var(--n0); flex: none;
+  position: relative;
 }
-.track-spin {
-  width: 12px; height: 12px; border-radius: 50%; flex: none;
-  border: 1.6px solid rgba(123, 149, 196, 0.3); border-top-color: var(--info); display: block;
+.track-dot::after {
+  content: ''; position: absolute; inset: -4px; border-radius: 50%;
+  border: 1px solid rgba(8, 9, 10, 0.4);
+  animation: track-pulse 2.4s var(--ease) infinite;
 }
-.track-btn.is-busy { color: var(--ink-dim); cursor: default; }
-.track-btn.is-done { color: var(--bull); border-color: rgba(95, 168, 160, 0.34); cursor: default; }
+@keyframes track-pulse {
+  0%   { transform: scale(0.7); opacity: 0.9; }
+  70%  { transform: scale(1.5); opacity: 0; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+
+/* The resolved states step back to an outline — the loud inverted treatment is
+   spent on the call to action, not on its receipt. */
+.track-btn.is-busy,
+.track-btn.is-done,
+.track-btn.is-error {
+  background: var(--surface-2); color: var(--ink); border-color: var(--line);
+  cursor: default;
+}
+.track-btn.is-done { border-color: var(--n6); }
+.track-btn.is-error { color: var(--ink-3); }
 .track-btn.is-done em {
   display: block; font-style: normal; font-size: 11px;
-  color: var(--ink-faint); margin-top: 2px; font-weight: 400;
+  color: var(--ink-4); margin-top: 3px; font-weight: 400;
 }
-.track-btn.is-error { color: var(--bear); border-color: rgba(201, 122, 130, 0.34); }
+.track-spin {
+  width: 12px; height: 12px; border-radius: 50%; flex: none; display: block;
+  border: 1.4px solid var(--n5); border-top-color: var(--ink);
+}
 
 .track-note {
-  font-size: 11.5px; color: var(--ink-faint); line-height: 1.6;
-  background: var(--panel); border: 1px solid var(--line-soft);
-  border-radius: var(--r-sm); padding: 11px 13px; text-align: left;
+  font-size: 11.5px; color: var(--ink-4); line-height: 1.65; text-align: left;
+  background: var(--surface); border: 1px solid var(--line-soft);
+  border-radius: var(--r-sm); padding: 12px 14px;
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
 }
 
-@media (max-width: 620px) {
+@media (max-width: 640px) {
   .track { left: 14px; right: 14px; max-width: none; align-items: stretch; }
   .track-btn { justify-content: center; }
 }

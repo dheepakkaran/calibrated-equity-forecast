@@ -1,117 +1,214 @@
 /* ───────────────────────────────────────────────────────────────────
-   Design tokens and base styles.
+   Monochrome design system.
 
-   Typeform's discipline, on a financial palette: one thing on screen at a
-   time, generous whitespace, large confident type, keyboard-first. Motion
-   carries meaning — a stage that finishes settles, a panel that arrives
-   slides from the direction it came from — and never decorates.
+   Removing colour removes the easiest channel for encoding meaning, so
+   everything colour was carrying has to be re-encoded structurally —
+   which is the better design anyway, because it survives a greyscale
+   print, a colour-blind reader and a bad projector:
 
-   Colour is rationed. Teal and rose only reach full saturation above 60%
-   confidence, which this model has never produced. Amber is the default
-   state of a verdict, because a near-coin-flip is the honest common case.
+     direction    glyph + fill.  ▲ solid = for, ▽ hollow = against,
+                  ◇ = no call. Never a red or green anything.
+     uncertainty  texture. A coin-flip band is drawn as diagonal
+                  hatching; a provisional number gets a dashed rule.
+     emphasis     inversion. The one loud move available is black-on-
+                  white, so it is spent only on the single most
+                  important element on a screen.
+     hierarchy    luminance and weight, on a deliberate nine-step ramp.
+
+   Typeface is IBM Plex throughout — Sans for prose, Mono for anything
+   a reader might compare digit by digit.
    ─────────────────────────────────────────────────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@200;300;400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500;600&display=swap');
 
 :root {
-  --ground: #131c25;
-  --panel: #1a2531;
-  --panel-2: #202e3b;
-  --panel-3: #26364500;
-  --line: #2c3d4e;
-  --line-soft: #24323d;
-  --ink: #e9f0f6;
-  --ink-dim: #9cafc1;
-  --ink-faint: #647889;
-  --bear: #c97a82;
-  --bull: #5fa8a0;
-  --warn: #d9a441;
-  --info: #7b95c4;
-  --bear-soft: rgba(201, 122, 130, 0.13);
-  --bull-soft: rgba(95, 168, 160, 0.13);
-  --warn-soft: rgba(217, 164, 65, 0.11);
-  --info-soft: rgba(123, 149, 196, 0.12);
+  /* nine-step neutral ramp, dark end first */
+  --n0: #08090a;
+  --n1: #0e1011;
+  --n2: #151719;
+  --n3: #1d2023;
+  --n4: #2a2e32;
+  --n5: #3d4348;
+  --n6: #626a71;
+  --n7: #8d959c;
+  --n8: #c2c8cd;
+  --n9: #f4f6f7;
 
-  --r-sm: 6px;
-  --r-md: 9px;
+  --bg: var(--n0);
+  --surface: var(--n1);
+  --surface-2: var(--n2);
+  --surface-3: var(--n3);
+  --line: var(--n4);
+  --line-soft: #191c1f;
+  --ink: var(--n9);
+  --ink-2: var(--n8);
+  --ink-3: var(--n7);
+  --ink-4: var(--n6);
+
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --r-sm: 5px;
+  --r-md: 8px;
   --r-lg: 14px;
 
   color-scheme: dark;
 }
 
+/* Animatable custom properties. Registering them lets a gradient stop or a
+   spotlight position transition, which plain custom properties cannot do. */
+@property --spot-x { syntax: '<percentage>'; inherits: false; initial-value: 50%; }
+@property --spot-y { syntax: '<percentage>'; inherits: false; initial-value: 50%; }
+@property --spot-o { syntax: '<number>'; inherits: false; initial-value: 0; }
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body, #root { height: 100%; }
+html { -webkit-text-size-adjust: 100%; }
 
 body {
-  background: var(--ground);
+  background: var(--bg);
   color: var(--ink);
   font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
   font-weight: 400;
   line-height: 1.55;
-  font-feature-settings: 'tnum' 1;
+  font-feature-settings: 'tnum' 1, 'ss01' 1;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
-.mono { font-family: 'IBM Plex Mono', monospace; }
+/* Film grain. In monochrome a large flat panel reads as dead pixels; a very
+   low-amplitude noise field gives it surface without introducing a hue.
+   Fixed and non-interactive so it never costs a repaint. */
+body::after {
+  content: '';
+  position: fixed; inset: 0; z-index: 999; pointer-events: none;
+  opacity: 0.022; mix-blend-mode: screen;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.mono { font-family: 'IBM Plex Mono', monospace; font-feature-settings: 'tnum' 1; }
+.num { font-variant-numeric: tabular-nums; }
+
+::selection { background: var(--ink); color: var(--n0); }
 
 kbd {
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 0.78em;
-  border: 1px solid var(--line);
-  border-bottom-width: 2px;
-  border-radius: 4px;
-  padding: 1px 5px;
-  color: var(--ink-faint);
+  font-size: 0.76em; font-weight: 500;
+  border: 1px solid var(--line); border-bottom-width: 2px;
+  border-radius: 4px; padding: 1px 5px; color: var(--ink-4);
+  background: var(--surface-2);
 }
 
 button { font: inherit; cursor: pointer; border: none; background: none; color: inherit; }
 input { font: inherit; }
-a { color: var(--info); }
+a { color: var(--ink-2); text-underline-offset: 3px; text-decoration-thickness: 1px; }
+svg { display: block; }
 
 /* ── buttons ─────────────────────────────────────────────────────── */
 .cta {
-  font-size: 15px; font-weight: 500;
-  color: #101820; background: var(--ink);
-  border-radius: 7px; padding: 12px 22px;
-  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 14.5px; font-weight: 500; letter-spacing: -0.005em;
+  color: var(--n0); background: var(--ink);
+  border-radius: var(--r-sm); padding: 11px 20px;
+  display: inline-flex; align-items: center; gap: 8px;
+  transition: transform 0.18s var(--ease), background 0.18s;
 }
+.cta:hover { background: #fff; transform: translateY(-1px); }
+.cta kbd { border-color: rgba(8, 9, 10, 0.24); color: rgba(8, 9, 10, 0.55); background: transparent; }
+
 .ghost {
-  font-size: 13px; color: var(--ink-dim);
+  font-size: 12.5px; color: var(--ink-3);
   border: 1px solid var(--line); border-radius: var(--r-sm);
-  padding: 8px 14px;
+  padding: 7px 13px;
+  transition: border-color 0.16s, color 0.16s, background 0.16s;
 }
-.ghost:hover { border-color: var(--ink-faint); color: var(--ink); }
+.ghost:hover { border-color: var(--n6); color: var(--ink); background: var(--surface-2); }
 
-/* ── scrollbars ──────────────────────────────────────────────────── */
-::-webkit-scrollbar { width: 9px; height: 9px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--line); border-radius: 5px; }
-::-webkit-scrollbar-thumb:hover { background: var(--ink-faint); }
-
-/* ── shared atoms ────────────────────────────────────────────────── */
-.eyebrow {
-  font-size: 12px; font-weight: 500; letter-spacing: 0.1em;
-  text-transform: uppercase; color: var(--ink-faint);
-}
-.pill {
-  font-size: 11px; padding: 2px 9px; border-radius: 11px;
-  font-weight: 500; white-space: nowrap; display: inline-block;
-}
-.pill.bull { background: var(--bull-soft); color: var(--bull); }
-.pill.bear { background: var(--bear-soft); color: var(--bear); }
-.pill.warn { background: var(--warn-soft); color: var(--warn); }
-.pill.info { background: var(--info-soft); color: var(--info); }
-.pill.flat { background: rgba(156, 175, 193, 0.12); color: var(--ink-dim); }
-
+/* ── surfaces, with a pointer-tracked spotlight ──────────────────── */
 .card {
-  background: var(--panel); border: 1px solid var(--line);
+  position: relative;
+  background: var(--surface); border: 1px solid var(--line);
   border-radius: var(--r-md); padding: 18px;
 }
-.micro { font-size: 11.5px; color: var(--ink-faint); line-height: 1.6; }
+/* The spotlight is a radial gradient pinned to the cursor. In a monochrome
+   layout it is the cheapest way to signal "this panel is live" without a hue. */
+.spot { --spot-o: 0; }
+.spot::before {
+  content: ''; position: absolute; inset: 0; border-radius: inherit;
+  pointer-events: none; opacity: var(--spot-o);
+  transition: opacity 0.4s var(--ease);
+  background: radial-gradient(300px circle at var(--spot-x) var(--spot-y),
+              rgba(244, 246, 247, 0.055), transparent 68%);
+}
+.spot:hover { --spot-o: 1; }
+
+/* ── direction glyphs: the replacement for red and green ─────────── */
+.dir { display: inline-flex; align-items: center; gap: 6px; }
+.dir::before {
+  font-size: 0.82em; line-height: 1; display: inline-block;
+  transform: translateY(-0.5px);
+}
+.dir.for::before   { content: '▲'; color: var(--ink); }
+.dir.against::before { content: '▽'; color: var(--ink-3); }
+.dir.none::before  { content: '◇'; color: var(--ink-4); }
+
+/* ── chips ───────────────────────────────────────────────────────── */
+.chip {
+  font-size: 11px; font-weight: 500; letter-spacing: 0.01em;
+  padding: 2px 9px; border-radius: 20px; white-space: nowrap;
+  display: inline-block; border: 1px solid var(--line); color: var(--ink-3);
+}
+.chip.solid { background: var(--ink); color: var(--n0); border-color: var(--ink); }
+.chip.strong { border-color: var(--n6); color: var(--ink); }
+/* Hatched: reserved for anything provisional or inside the coin-flip band. */
+.chip.hatch {
+  color: var(--ink-2); border-style: dashed;
+  background-image: repeating-linear-gradient(45deg, transparent, transparent 3px,
+                    rgba(244, 246, 247, 0.07) 3px, rgba(244, 246, 247, 0.07) 6px);
+}
+
+.eyebrow {
+  font-size: 11px; font-weight: 500; letter-spacing: 0.13em;
+  text-transform: uppercase; color: var(--ink-4);
+}
+.micro { font-size: 11.5px; color: var(--ink-4); line-height: 1.62; }
+.balance { text-wrap: balance; }
+.pretty { text-wrap: pretty; }
+
+/* ── scrollbars ──────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--n4); border-radius: 6px; border: 3px solid var(--bg); }
+::-webkit-scrollbar-thumb:hover { background: var(--n5); }
+
+/* ── scroll-driven reveal, no JS ─────────────────────────────────── */
+@supports (animation-timeline: view()) {
+  .reveal {
+    animation: reveal-in linear both;
+    animation-timeline: view();
+    animation-range: entry 8% cover 26%;
+  }
+  @keyframes reveal-in {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: none; }
+  }
+}
+
+/* ── shimmer, for anything genuinely pending ─────────────────────── */
+.shimmer {
+  background: linear-gradient(90deg, var(--surface-2) 0%, var(--n4) 40%,
+              var(--surface-2) 80%);
+  background-size: 260% 100%;
+  animation: shimmer 1.5s var(--ease) infinite;
+  border-radius: var(--r-sm);
+}
+@keyframes shimmer {
+  from { background-position: 160% 0; }
+  to   { background-position: -60% 0; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+  .reveal { opacity: 1 !important; transform: none !important; }
 }

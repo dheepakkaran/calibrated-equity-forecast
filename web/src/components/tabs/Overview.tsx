@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import type { Payload } from '../../lib/types'
+import { ConvictionBar, Num, Panel } from '../ui'
 import './Overview.css'
 
 const EASE = [0.22, 0.61, 0.36, 1] as const
@@ -53,11 +54,19 @@ export default function Overview({ data }: { data: Payload }) {
         <h3 className="ov-big"><Headline text={v.headline} cls={cls} /></h3>
         <p className="ov-plain">{v.opening}</p>
         <div className="ov-sure">
-          <div className={abstain ? 'ov-no none' : 'ov-no'}>
-            {abstain ? 'no call' : `${(f.confidence * 100).toFixed(1)}%`}
+          <div>
+            <div className={abstain ? 'ov-no none' : 'ov-no'}>
+              {abstain ? 'no call' : <Num value={f.confidence * 100} decimals={1} suffix="%" delay={0.3} />}
+            </div>
+            <div className="ov-no-l">{abstain ? 'below the acting threshold' : 'confidence'}</div>
           </div>
           <p>{v.confidence_line}</p>
         </div>
+        {/* The coin-flip band, drawn. Without colour this is what tells a
+            reader at a glance that the needle sits in the region where the
+            model has nothing to say. */}
+        <ConvictionBar proba={f.proba_outperform}
+          threshold={f.abstain_threshold} acted={f.acted} />
       </motion.div>
 
       {/* ── the tally ───────────────────────────────────────────── */}
@@ -67,40 +76,56 @@ export default function Overview({ data }: { data: Payload }) {
           {reasons.length} things were checked. Each one either pushed the price up
           or pulled it down.
         </div>
-        <div className="ov-tally">
-          <div className="ov-side up">
-            <div className="ov-lbl">Points pushing it up</div>
-            <div className="ov-pts p">+{t.points_pushing_up ?? 0}</div>
-            <div className="ov-cnt">from {t.checks_pushing_up ?? 0} of {reasons.length} checks</div>
-          </div>
-          <div className="ov-side">
-            <div className="ov-lbl">Points pulling it down</div>
-            <div className="ov-pts n">{t.points_pulling_down ?? 0}</div>
-            <div className="ov-cnt">from {t.checks_pulling_down ?? 0} of {reasons.length} checks</div>
-          </div>
-        </div>
+        {(() => {
+          const up_ = Math.abs(t.points_pushing_up ?? 0)
+          const dn_ = Math.abs(t.points_pulling_down ?? 0)
+          const tot = up_ + dn_ || 1
+          return (
+            <div className="ov-tally">
+              <div className="ov-side">
+                <div className="ov-lbl"><span className="dir for" /> pushing it up</div>
+                <div className="ov-pts"><Num value={up_} signed delay={0.1} /></div>
+                <div className="ov-cnt">from {t.checks_pushing_up ?? 0} of {reasons.length} checks</div>
+                <motion.div className="ov-side-bar" initial={{ width: 0 }}
+                  animate={{ width: `${(up_ / tot) * 100}%` }}
+                  transition={{ duration: 0.8, ease: EASE, delay: 0.2 }} />
+              </div>
+              <div className="ov-side">
+                <div className="ov-lbl"><span className="dir against" /> pulling it down</div>
+                <div className="ov-pts"><Num value={-dn_} signed delay={0.15} /></div>
+                <div className="ov-cnt">from {t.checks_pulling_down ?? 0} of {reasons.length} checks</div>
+                <motion.div className="ov-side-bar" initial={{ width: 0 }}
+                  animate={{ width: `${(dn_ / tot) * 100}%` }}
+                  transition={{ duration: 0.8, ease: EASE, delay: 0.25 }} />
+              </div>
+            </div>
+          )
+        })()}
 
         {reasons.map((r, i) => {
           const pos = r.points > 0
           const rev = evReasons[r.aspect]?.is_reversal
           const url = r.source?.match(/https?:\/\/\S+/)
           return (
-            <motion.div key={r.aspect} className={pos ? 'ov-reason pos' : 'ov-reason neg'}
+            <motion.div key={r.aspect} className="ov-reason"
               initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: Math.min(i * 0.05, 0.3), duration: 0.4, ease: EASE }}>
+              transition={{ delay: Math.min(i * 0.05, 0.3), duration: 0.45, ease: EASE }}>
               <div className="ov-score">
-                <div className={pos ? 'v p' : 'v n'}>{pos ? '+' : ''}{r.points}</div>
+                <div className={pos ? 'v' : 'v n'}>{pos ? '+' : '−'}{Math.abs(r.points)}</div>
                 <div className="u">points</div>
+                <div className="g">{pos ? '▲ for' : '▽ against'}</div>
               </div>
               <div className="ov-txt">
                 <h4>{r.title}</h4>
                 <p>{r.body}</p>
-                {rev && <span className="pill info ov-rev">reversal effect</span>}
-                {r.source && (url
-                  ? <a className="ov-cite" href={url[0]} target="_blank" rel="noopener noreferrer">
-                      {r.source.replace(url[0], '').trim() || 'Open the filing'}
-                    </a>
-                  : <div className="ov-cite">{r.source}</div>)}
+                <div className="ov-tags">
+                  {rev && <span className="chip hatch">reversal effect</span>}
+                  {r.source && (url
+                    ? <a className="ov-cite" href={url[0]} target="_blank" rel="noopener noreferrer">
+                        {r.source.replace(url[0], '').trim() || 'Open the filing'}
+                      </a>
+                    : <span className="ov-cite">{r.source}</span>)}
+                </div>
               </div>
             </motion.div>
           )
@@ -108,20 +133,20 @@ export default function Overview({ data }: { data: Payload }) {
       </div>
 
       {/* ── teaching box ────────────────────────────────────────── */}
-      <div className="ov-means">
+      <Panel className="ov-means">
         <h3>{v.explainer.question}</h3>
         {v.explainer.paragraphs.map((p, i) => <p key={i}>{p}</p>)}
-      </div>
+      </Panel>
 
       {/* ── levels ──────────────────────────────────────────────── */}
       <div className="sect">
         <div className="sect-head">What to watch tomorrow</div>
         <div className="sect-sub">Three prices worth knowing, if you plan to follow along.</div>
         <div className="grid-3">
-          {v.levels.map((l, i) => (
+          {v.levels.map((l) => (
             <div className="ov-lvl" key={l.label}>
               <div className="k">{l.label}</div>
-              <div className={`n ${['up', 'mid', 'dn'][i] ?? 'mid'}`}>₹{inr(l.price)}</div>
+              <div className="n">₹{inr(l.price)}</div>
               <div className="d">{l.meaning}</div>
             </div>
           ))}

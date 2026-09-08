@@ -1,86 +1,116 @@
 .run {
   height: 100%; display: flex; flex-direction: column;
-  padding: 30px clamp(20px, 4vw, 44px) 26px; overflow: hidden;
+  padding: 34px clamp(20px, 4vw, 48px) 28px; overflow: hidden;
 }
 
 .run-top {
-  display: flex; align-items: flex-end; gap: 24px;
-  padding-bottom: 22px; border-bottom: 1px solid var(--line);
+  display: flex; align-items: flex-end; gap: 26px;
+  padding-bottom: 24px; border-bottom: 1px solid var(--line);
   flex-wrap: wrap;
 }
 .run-sym h2 {
-  font-size: clamp(24px, 3.4vw, 34px); font-weight: 600;
-  letter-spacing: -0.024em; margin-top: 5px;
+  font-size: clamp(26px, 3.8vw, 40px); font-weight: 600;
+  letter-spacing: -0.032em; margin-top: 6px; line-height: 1;
 }
-.run-pct { margin-left: auto; min-width: 220px; flex: 1; max-width: 360px; }
-.run-pct span {
-  display: block; text-align: right; font-size: 13px;
-  color: var(--ink-dim); margin-bottom: 7px;
-  font-variant-numeric: tabular-nums;
+.run-pct { margin-left: auto; min-width: 240px; flex: 1; max-width: 400px; }
+.run-pct-row {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin-bottom: 9px;
 }
-.run-track { height: 2px; background: var(--line-soft); border-radius: 2px; overflow: hidden; }
-.run-fill { height: 2px; background: var(--info); }
+.run-pct-n { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; }
+.run-pct-l { font-size: 11px; color: var(--ink-4); letter-spacing: 0.1em; text-transform: uppercase; }
+.run-track { height: 1px; background: var(--line); position: relative; overflow: hidden; }
+.run-fill { height: 1px; background: var(--ink); }
 
 .run-split {
-  flex: 1; display: grid; grid-template-columns: 1fr 1fr;
-  gap: clamp(20px, 3vw, 40px); min-height: 0; padding-top: 22px;
+  flex: 1; display: grid; grid-template-columns: minmax(280px, 0.85fr) 1.15fr;
+  gap: clamp(24px, 4vw, 56px); min-height: 0; padding-top: 26px;
 }
 .run-colhead {
-  font-size: 11.5px; font-weight: 500; letter-spacing: 0.1em;
-  text-transform: uppercase; color: var(--ink-faint);
-  margin-bottom: 16px; position: sticky; top: 0;
-  background: var(--ground); padding-bottom: 8px; z-index: 1;
+  font-size: 10.5px; font-weight: 500; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--ink-4);
+  margin-bottom: 18px; position: sticky; top: 0; z-index: 1;
+  background: var(--bg); padding-bottom: 10px;
+  display: flex; align-items: center; gap: 12px;
 }
-.run-ops, .run-feed { min-height: 0; overflow-y: auto; padding-right: 6px; }
+.run-colhead::after { content: ''; flex: 1; height: 1px; background: var(--line-soft); }
+.run-ops, .run-feed { min-height: 0; overflow-y: auto; padding-right: 8px; }
 
-/* ── operations ──────────────────────────────────────────────────── */
-.ops-list { display: flex; flex-direction: column; gap: 2px; }
+/* ── operations: a ledger, not a checklist ───────────────────────── */
+.ops-list { display: flex; flex-direction: column; }
 .op {
-  display: flex; align-items: center; gap: 13px;
-  padding: 11px 13px; border-radius: var(--r-sm);
-  border: 1px solid transparent;
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 2px; border-bottom: 1px solid var(--line-soft);
+  position: relative;
 }
-.op-running { background: var(--info-soft); border-color: rgba(123, 149, 196, 0.24); }
-.op-done .op-mark { color: var(--bull); }
-.op-failed { background: var(--bear-soft); border-color: rgba(201, 122, 130, 0.22); }
-.op-failed .op-mark { color: var(--bear); }
+.op:last-child { border-bottom: none; }
+/* The running row gets a moving hairline rather than a filled background —
+   in monochrome a filled row reads as "selected", which it is not. */
+.op-running::after {
+  content: ''; position: absolute; left: 0; bottom: -1px; height: 1px; width: 100%;
+  background: linear-gradient(90deg, transparent, var(--ink), transparent);
+  background-size: 50% 100%; background-repeat: no-repeat;
+  animation: op-sweep 1.35s var(--ease) infinite;
+}
+@keyframes op-sweep {
+  from { background-position: -50% 0; }
+  to   { background-position: 150% 0; }
+}
 
 .op-mark {
-  width: 18px; height: 18px; flex: none;
-  display: grid; place-items: center; color: var(--info);
+  width: 16px; height: 16px; flex: none; display: grid; place-items: center;
+  color: var(--ink);
 }
 .op-spin {
-  width: 13px; height: 13px; border-radius: 50%;
-  border: 1.6px solid rgba(123, 149, 196, 0.28);
-  border-top-color: var(--info); display: block;
+  width: 11px; height: 11px; border-radius: 50%; display: block;
+  border: 1.4px solid var(--n5); border-top-color: var(--ink);
 }
-.op-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--ink-faint); }
-.op-x { font-size: 15px; line-height: 1; }
+.op-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--n5); }
+.op-x { font-size: 14px; line-height: 1; color: var(--ink-3); }
+.op-waiting .op-label { color: var(--ink-4); }
+.op-waiting .op-doing { color: var(--n5); }
+.op-failed .op-label { color: var(--ink-3); }
 
 .op-body { min-width: 0; }
-.op-label { font-size: 13.5px; font-weight: 500; }
-.op-doing { font-size: 11.5px; color: var(--ink-faint); margin-top: 2px; }
+.op-label { font-size: 13.5px; font-weight: 500; letter-spacing: -0.004em; }
+.op-doing { font-size: 11.5px; color: var(--ink-4); margin-top: 2px; }
 .op-ms {
-  margin-left: auto; font-family: 'IBM Plex Mono', monospace;
-  font-size: 11px; color: var(--ink-faint); flex: none;
-  font-variant-numeric: tabular-nums;
+  margin-left: auto; flex: none;
+  font-family: 'IBM Plex Mono', monospace; font-size: 10.5px;
+  color: var(--ink-4); font-variant-numeric: tabular-nums;
 }
+.op-bar {
+  flex: none; width: 34px; height: 3px; background: var(--line);
+  overflow: hidden; margin-left: 10px;
+}
+.op-bar i { display: block; height: 3px; background: var(--n6); }
 
 /* ── the narration feed ──────────────────────────────────────────── */
 .said {
-  background: var(--panel); border: 1px solid var(--line);
-  border-radius: var(--r-md); padding: 15px 17px; margin-bottom: 11px;
-  border-left: 2px solid var(--info);
+  border-left: 1px solid var(--line); padding: 0 0 22px 20px;
+  position: relative;
 }
-.said-failed { border-left-color: var(--bear); }
+.said::before {
+  content: ''; position: absolute; left: -3px; top: 5px;
+  width: 5px; height: 5px; border-radius: 50%; background: var(--ink);
+}
+.said-failed::before { background: var(--n5); }
+.said:last-child { padding-bottom: 4px; }
 .said-key {
-  font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
-  color: var(--ink-faint); margin-bottom: 7px;
+  font-size: 10.5px; letter-spacing: 0.11em; text-transform: uppercase;
+  color: var(--ink-4); margin-bottom: 8px;
 }
-.said p { font-size: 14px; color: var(--ink-dim); line-height: 1.68; }
-.said-empty { font-size: 13.5px; color: var(--ink-faint); font-style: italic; }
+.said p {
+  font-size: 14.5px; color: var(--ink-2); line-height: 1.72;
+  max-width: 58ch; text-wrap: pretty;
+}
+.said-failed p { color: var(--ink-4); }
+.said-empty { font-size: 13.5px; color: var(--ink-4); }
+.said-skel { display: flex; flex-direction: column; gap: 8px; max-width: 52ch; }
+.said-skel i { height: 11px; display: block; }
 
-@media (max-width: 900px) {
-  .run-split { grid-template-columns: 1fr; gap: 26px; overflow-y: auto; }
+@media (max-width: 940px) {
+  .run-split { grid-template-columns: 1fr; gap: 30px; overflow-y: auto; }
   .run-ops, .run-feed { overflow: visible; }
+  .run { overflow-y: auto; height: auto; min-height: 100%; }
 }

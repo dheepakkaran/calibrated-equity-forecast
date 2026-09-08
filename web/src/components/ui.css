@@ -1,0 +1,78 @@
+/* ── conviction bar ──────────────────────────────────────────────── */
+.cbar { position: relative; height: 40px; margin: 4px 0 2px; }
+.cbar-track {
+  position: absolute; top: 13px; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--n5), var(--n7) 50%, var(--n5));
+  opacity: 0.6;
+}
+.cbar-band {
+  position: absolute; top: 6px; height: 16px;
+  border-left: 1px solid var(--n6); border-right: 1px solid var(--n6);
+  background-image: repeating-linear-gradient(45deg, transparent, transparent 3px,
+                    rgba(244, 246, 247, 0.1) 3px, rgba(244, 246, 247, 0.1) 6px);
+}
+.cbar-needle {
+  position: absolute; top: 2px; width: 1px; height: 24px;
+  background: var(--ink); transform: translateX(-0.5px);
+}
+.cbar-needle::after {
+  content: ''; position: absolute; top: -1px; left: -3.5px;
+  width: 8px; height: 8px; background: var(--ink);
+  clip-path: polygon(50% 100%, 0 0, 100% 0);
+}
+/* Inside the band the needle goes hollow — the marker itself reports that
+   the reading is not actionable. */
+.cbar-needle.is-in { background: var(--n6); }
+.cbar-needle.is-in::after { background: var(--n6); }
+.cbar-keys {
+  position: absolute; top: 26px; left: 0; right: 0;
+  display: flex; justify-content: space-between;
+  font-size: 10.5px; color: var(--ink-4); letter-spacing: 0.01em;
+}
+
+/* ── command palette ─────────────────────────────────────────────── */
+.cmd-scrim {
+  position: fixed; inset: 0; z-index: 90;
+  background: rgba(4, 5, 6, 0.66);
+  backdrop-filter: blur(6px) saturate(0);
+  -webkit-backdrop-filter: blur(6px) saturate(0);
+}
+/* Centred by Framer Motion's own `x: '-50%'`, not by a CSS transform.
+   Motion writes `transform` inline for y and scale, so a CSS
+   translateX(-50%) here is silently clobbered and the panel drifts right. */
+.cmd {
+  position: fixed; z-index: 91; left: 50%; top: 16vh;
+  width: min(560px, calc(100vw - 32px));
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--r-lg); overflow: hidden;
+  box-shadow: 0 32px 90px rgba(0, 0, 0, 0.66);
+}
+.cmd-field {
+  display: flex; align-items: center; gap: 12px;
+  padding: 15px 18px; border-bottom: 1px solid var(--line-soft);
+}
+.cmd-field input {
+  flex: 1; background: none; border: none; outline: none;
+  font-size: 16px; color: var(--ink); text-transform: uppercase;
+  letter-spacing: 0.01em;
+}
+.cmd-field input::placeholder { text-transform: none; color: var(--ink-4); }
+.cmd-list { max-height: 320px; overflow-y: auto; }
+.cmd-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 18px; cursor: pointer; border-left: 2px solid transparent;
+}
+.cmd-row.sel { background: var(--surface-2); border-left-color: var(--ink); }
+.cmd-row b { font-size: 13.5px; font-weight: 500; }
+.cmd-row em { font-style: normal; font-size: 11.5px; color: var(--ink-4); margin-left: auto; }
+.cmd-foot {
+  padding: 10px 18px; border-top: 1px solid var(--line-soft);
+  font-size: 11px; color: var(--ink-4); display: flex; gap: 14px; flex-wrap: wrap;
+}
+
+/* ── scroll progress ─────────────────────────────────────────────── */
+.scrollbar-top {
+  position: fixed; top: 0; left: 0; right: 0; height: 1px; z-index: 80;
+  background: var(--line-soft);
+}
+.scrollbar-top i { display: block; height: 1px; background: var(--ink); }
