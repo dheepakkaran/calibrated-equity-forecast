@@ -369,6 +369,117 @@ attribution is recent".
 
 ---
 
+## The interface
+
+Three surfaces, all served by the same FastAPI process:
+
+| route | what it is |
+|---|---|
+| `/` | **React app** — streaming analysis, three tabs, tracking |
+| `/dashboard` | multi-panel dashboard |
+| `/flow` | guided single-question flow |
+
+### The streaming run
+
+Type a symbol, press enter, and the pipeline reports itself as it works.
+Operations run down the left with measured timings; each one explains itself in
+plain English on the right as it lands.
+
+```
+✓ Loading price history      98 ms   Loaded 1941 trading sessions for HINDALCO,
+                                      2018-10-24 to 2026-09-03, alongside 51
+                                      other large-caps to compare it against.
+✓ Fitting the models        3.0 s   Trained four models on 98,599 rows of
+                                      history ending 2026-09-02 — nothing after
+                                      that date. Narrowed 200 measures down to
+                                      the 70 that carried signal.
+✓ Searching filings           2 ms   Found 8 unusually large moves and searched
+                                      exchange filings around each. 5 could be
+                                      matched to something concrete; 3 are left
+                                      unexplained rather than given a story.
+```
+
+Server-sent events over `/api/analyse/{symbol}`, with each stage pushed to a
+worker thread — the stages are CPU-bound, and without that the event loop
+blocks and every event describing the work arrives in one burst at the end.
+Nothing is theatre: the elapsed milliseconds are measured, and a stage that is
+fast reports fast. A progress bar that lies about what a system is doing is
+worse than no progress bar.
+
+### The three tabs
+
+**Overview** — the answer in plain English: headline, what the confidence
+actually means, a points tally, one card per factor with its reason, a teaching
+box on why one day's price says little about the company, prices worth
+watching, and a closing that adds the points up and states the call at its
+percentage.
+
+**Analysis** — the market board with each series labelled by its availability
+lag, the SHAP attribution behind the number, the price history with attributed
+moves marked, driver correlations against *lagged* series, the regime and the
+four arms, and the held-out track record.
+
+**Sources** — exchange filings with links to the original PDFs, the moves that
+have no source listed rather than hidden, every market series with the lag it
+was read at, the model's own provenance, and the panels this system does not
+have.
+
+React 19 + Framer Motion, built to static files that FastAPI serves. Motion
+carries meaning — a stage that finishes settles, a panel arrives from the
+direction it came from — and never decorates.
+
+---
+
+## Tracking a guess
+
+The button in the corner fixes a forecast *before* the outcome exists, which is
+the only way a track record means anything. The ledger is
+`tracking/predictions.json` in this repository rather than a database row: a git
+commit is the strongest cheap proof that the claim predates the result, and
+neither the timestamp nor the content can be quietly edited without it showing
+in a diff.
+
+Resolution runs twice, because a close-to-close forecast cannot honestly be
+graded at the opening bell:
+
+| when | what | status |
+|---|---|---|
+| 09:20 IST | reads the opening gap | **provisional** — settles nothing, and says so |
+| 15:45 IST | grades the close-to-close outcome | **final** |
+
+Each resolved guess gets a category and the two numbers a reader is owed — was
+the direction right, and did the share move enough for that to mean anything:
+
+| category | when |
+|---|---|
+| **okay** | direction right on a move that mattered — or it abstained and the share barely moved |
+| **okayish** | right but on noise, wrong but on noise, or it abstained while the share moved |
+| **not okay** | direction wrong on a move that mattered |
+
+"Mattered" is the realised market-relative move against the share's *own*
+typical daily swing, so a ₹500 stock and a ₹5,000 one are judged on the same
+scale. A move under 0.25× that swing is noise: being right about noise is luck
+and being wrong about it costs nothing, so both land in the middle.
+
+A worked example from the live ledger:
+
+```
+HINDALCO   said: will lag, 51.3% confident
+09:20      gap +0.29% vs market +0.16%   →  leaning against the call
+15:45      relative move +0.09%  =  0.04 × its typical swing
+           →  okayish · direction wrong · reward −0.019
+              "Direction was wrong, but on a move too small to matter either way."
+```
+
+Two workflows drive it. `resolve-tracked.yml` runs the two crons and commits
+the ledger back. `track-request.yml` exists so the button works on a static
+host with no backend: a write token cannot be shipped to a web page, so the
+button opens a pre-filled issue, and an Action reads the title, runs the
+forecast server-side, appends to the ledger and closes the issue. The only
+credential involved is the Actions token, which never leaves CI.
+
+---
+
 ## Why the numbers are believable
 
 Every result above rests on the validation design, so that is where the effort
@@ -477,7 +588,13 @@ cef/
     main.py                FastAPI surface
     service.py             everything the handlers need, no HTTP in it
     static/                Typeform-style flow: index.html, app.css, app.js
+  llm.py                   Gemini free tier first, OpenAI fallback
+  tracking.py              the JSON ledger and its grading rules
+  api/
+    stream.py              server-sent events for the live run
   evidence/
+    glossary.py            hand-written plain English for all 200 features
+    simple.py              the plain-language view
     event_map.py           filing materiality + direction priors
     moves.py               significant-move detection
     attribution.py         move -> filing or driver, with sources
@@ -496,6 +613,7 @@ cef/
 tests/test_no_leakage.py   15 leakage tests
 tests/test_evidence.py     30 evidence-layer tests
 tests/test_feedback.py     16 bandit and reward tests
+tests/test_simple_view.py  13 plain-language and glossary tests
 ```
 
 Technical indicators are hand-written rather than taken from TA-Lib or
@@ -532,7 +650,11 @@ installing Homebrew.
 .venv/bin/python scripts/attribute.py --sigma 2.0         # move attribution
 .venv/bin/python scripts/forecast.py HINDZINC             # one full forecast
 .venv/bin/python scripts/replay.py --n-symbols 30         # exercise the loop
-.venv/bin/uvicorn cef.api.main:app --port 8123            # the interface
+.venv/bin/uvicorn cef.api.main:app --port 8124            # the interface
+
+# rebuilding the React app (optional — the bundle is committed)
+export PATH="$HOME/.local/nodejs/bin:$PATH"
+cd web && npm install && npm run build
 ```
 
 ### Data sources

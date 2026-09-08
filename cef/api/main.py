@@ -11,12 +11,13 @@ from __future__ import annotations
 import logging
 
 from fastapi import FastAPI, HTTPException, Query
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from cef.api import dashboard as dash
 from cef.api import service
+from cef.api import stream as stream_mod
 from cef.config import ROOT
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s  %(message)s",
@@ -29,6 +30,12 @@ app = FastAPI(
 )
 
 STATIC = ROOT / "cef" / "api" / "static"
+WEBDIST = ROOT / "cef" / "api" / "webdist"
+
+
+class TrackRequest(BaseModel):
+    symbol: str
+    note: str = Field("", max_length=280)
 
 
 class CompareRequest(BaseModel):
@@ -69,6 +76,45 @@ def narration(symbol: str) -> dict:
         # No API key configured. The rest of the system works without it, so
         # this degrades rather than fails.
         raise HTTPException(503, str(exc))
+
+
+@app.get("/api/analyse/{symbol}")
+async def analyse(symbol: str) -> StreamingResponse:
+    """Server-sent events for the live analysis run.
+
+    ``X-Accel-Buffering: no`` matters: without it a reverse proxy will hold the
+    whole stream and deliver it in one burst at the end, which defeats the
+    entire point of streaming the stages.
+    """
+    return StreamingResponse(
+        stream_mod.analyse(symbol),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no",
+                 "Connection": "keep-alive"},
+    )
+
+
+@app.post("/api/track")
+def track(req: TrackRequest) -> dict:
+    """Record a guess for tomorrow morning."""
+    from cef.tracking import summarise, track as do_track
+
+    try:
+        f = service.forecast(req.symbol)
+    except KeyError:
+        raise HTTPException(404, f"{req.symbol.upper()} is not in the universe")
+    row = do_track(f, req.note)
+    return {"tracked": row, "summary": summarise()}
+
+
+@app.get("/api/tracking")
+def tracking(limit: int = Query(50, le=500)) -> dict:
+    """The ledger and its running summary."""
+    from cef.tracking import load, summarise
+
+    rows = load()
+    rows.sort(key=lambda r: r["tracked_at"], reverse=True)
+    return {"summary": summarise(), "rows": rows[:limit]}
 
 
 @app.get("/api/simple/{symbol}")
@@ -159,13 +205,27 @@ def dashboard(symbol: str) -> dict:
 
 @app.get("/")
 def index() -> FileResponse:
+    """The React app: streaming analysis, three tabs, tracking.
+
+    Falls back to the dashboard when the bundle has not been built, so a fresh
+    clone that has not run `npm run build` still serves something useful.
+    """
+    built = WEBDIST / "index.html"
+    return FileResponse(built if built.exists() else STATIC / "dashboard.html")
+
+
+@app.get("/dashboard")
+def dashboard_page() -> FileResponse:
+    """The multi-panel dashboard."""
     return FileResponse(STATIC / "dashboard.html")
 
 
 @app.get("/flow")
 def flow() -> FileResponse:
-    """The guided single-question flow, kept alongside the dashboard."""
+    """The guided single-question flow."""
     return FileResponse(STATIC / "index.html")
 
 
 app.mount("/static", StaticFiles(directory=STATIC), name="static")
+if (WEBDIST / "assets").exists():
+    app.mount("/assets", StaticFiles(directory=WEBDIST / "assets"), name="assets")

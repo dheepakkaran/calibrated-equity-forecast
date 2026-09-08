@@ -1,0 +1,86 @@
+.run {
+  height: 100%; display: flex; flex-direction: column;
+  padding: 30px clamp(20px, 4vw, 44px) 26px; overflow: hidden;
+}
+
+.run-top {
+  display: flex; align-items: flex-end; gap: 24px;
+  padding-bottom: 22px; border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
+}
+.run-sym h2 {
+  font-size: clamp(24px, 3.4vw, 34px); font-weight: 600;
+  letter-spacing: -0.024em; margin-top: 5px;
+}
+.run-pct { margin-left: auto; min-width: 220px; flex: 1; max-width: 360px; }
+.run-pct span {
+  display: block; text-align: right; font-size: 13px;
+  color: var(--ink-dim); margin-bottom: 7px;
+  font-variant-numeric: tabular-nums;
+}
+.run-track { height: 2px; background: var(--line-soft); border-radius: 2px; overflow: hidden; }
+.run-fill { height: 2px; background: var(--info); }
+
+.run-split {
+  flex: 1; display: grid; grid-template-columns: 1fr 1fr;
+  gap: clamp(20px, 3vw, 40px); min-height: 0; padding-top: 22px;
+}
+.run-colhead {
+  font-size: 11.5px; font-weight: 500; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--ink-faint);
+  margin-bottom: 16px; position: sticky; top: 0;
+  background: var(--ground); padding-bottom: 8px; z-index: 1;
+}
+.run-ops, .run-feed { min-height: 0; overflow-y: auto; padding-right: 6px; }
+
+/* ── operations ──────────────────────────────────────────────────── */
+.ops-list { display: flex; flex-direction: column; gap: 2px; }
+.op {
+  display: flex; align-items: center; gap: 13px;
+  padding: 11px 13px; border-radius: var(--r-sm);
+  border: 1px solid transparent;
+}
+.op-running { background: var(--info-soft); border-color: rgba(123, 149, 196, 0.24); }
+.op-done .op-mark { color: var(--bull); }
+.op-failed { background: var(--bear-soft); border-color: rgba(201, 122, 130, 0.22); }
+.op-failed .op-mark { color: var(--bear); }
+
+.op-mark {
+  width: 18px; height: 18px; flex: none;
+  display: grid; place-items: center; color: var(--info);
+}
+.op-spin {
+  width: 13px; height: 13px; border-radius: 50%;
+  border: 1.6px solid rgba(123, 149, 196, 0.28);
+  border-top-color: var(--info); display: block;
+}
+.op-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--ink-faint); }
+.op-x { font-size: 15px; line-height: 1; }
+
+.op-body { min-width: 0; }
+.op-label { font-size: 13.5px; font-weight: 500; }
+.op-doing { font-size: 11.5px; color: var(--ink-faint); margin-top: 2px; }
+.op-ms {
+  margin-left: auto; font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; color: var(--ink-faint); flex: none;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── the narration feed ──────────────────────────────────────────── */
+.said {
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: var(--r-md); padding: 15px 17px; margin-bottom: 11px;
+  border-left: 2px solid var(--info);
+}
+.said-failed { border-left-color: var(--bear); }
+.said-key {
+  font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--ink-faint); margin-bottom: 7px;
+}
+.said p { font-size: 14px; color: var(--ink-dim); line-height: 1.68; }
+.said-empty { font-size: 13.5px; color: var(--ink-faint); font-style: italic; }
+
+@media (max-width: 900px) {
+  .run-split { grid-template-columns: 1fr; gap: 26px; overflow-y: auto; }
+  .run-ops, .run-feed { overflow: visible; }
+}

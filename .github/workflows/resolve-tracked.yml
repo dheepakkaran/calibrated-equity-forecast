@@ -1,0 +1,85 @@
+# Grades tracked guesses against what the market actually did.
+#
+# Two runs, because a next-session close-to-close forecast cannot honestly be
+# graded at the opening bell:
+#
+#   03:50 UTC = 09:20 IST   early read — the opening gap only, provisional
+#   10:15 UTC = 10:15+5:30 = 15:45 IST   resolved — the real outcome, final
+#
+# Weekdays only. Indian exchange holidays are handled by the resolver itself:
+# a session with no printed price is left pending rather than graded against
+# data that does not exist.
+name: Resolve tracked guesses
+
+on:
+  schedule:
+    - cron: '50 3 * * 1-5'    # 09:20 IST — early read
+    - cron: '15 10 * * 1-5'   # 15:45 IST — resolved
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'early or resolved'
+        required: true
+        default: resolved
+        type: choice
+        options: [early, resolved]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: resolve-tracked
+  cancel-in-progress: false
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      # Only what the resolver needs. Installing the full requirements file
+      # would pull LightGBM, SHAP and torch for a job that does arithmetic on
+      # two prices.
+      - name: Install
+        run: |
+          python -m pip install --quiet --upgrade pip
+          python -m pip install --quiet yfinance pandas numpy python-dotenv
+          python -m pip install --quiet -e . --no-deps
+
+      - name: Pick the mode
+        id: mode
+        run: |
+          if [ -n "${{ inputs.mode }}" ]; then
+            echo "mode=${{ inputs.mode }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event.schedule }}" = "50 3 * * 1-5" ]; then
+            echo "mode=early" >> "$GITHUB_OUTPUT"
+          else
+            echo "mode=resolved" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Resolve
+        run: python scripts/resolve_tracked.py --mode "${{ steps.mode.outputs.mode }}"
+
+      - name: Commit the ledger
+        run: |
+          if git diff --quiet -- tracking/; then
+            echo "no change to the ledger"
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tracking/
+          git commit -m "tracking: ${{ steps.mode.outputs.mode }} pass for $(date -u +%Y-%m-%d)"
+          git push
+
+      - name: Summary
+        run: |
+          echo "### Tracking — ${{ steps.mode.outputs.mode }} pass" >> "$GITHUB_STEP_SUMMARY"
+          echo '```json' >> "$GITHUB_STEP_SUMMARY"
+          cat tracking/summary.json >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"

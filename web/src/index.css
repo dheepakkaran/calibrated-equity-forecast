@@ -1,0 +1,117 @@
+/* ───────────────────────────────────────────────────────────────────
+   Design tokens and base styles.
+
+   Typeform's discipline, on a financial palette: one thing on screen at a
+   time, generous whitespace, large confident type, keyboard-first. Motion
+   carries meaning — a stage that finishes settles, a panel that arrives
+   slides from the direction it came from — and never decorates.
+
+   Colour is rationed. Teal and rose only reach full saturation above 60%
+   confidence, which this model has never produced. Amber is the default
+   state of a verdict, because a near-coin-flip is the honest common case.
+   ─────────────────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+:root {
+  --ground: #131c25;
+  --panel: #1a2531;
+  --panel-2: #202e3b;
+  --panel-3: #26364500;
+  --line: #2c3d4e;
+  --line-soft: #24323d;
+  --ink: #e9f0f6;
+  --ink-dim: #9cafc1;
+  --ink-faint: #647889;
+  --bear: #c97a82;
+  --bull: #5fa8a0;
+  --warn: #d9a441;
+  --info: #7b95c4;
+  --bear-soft: rgba(201, 122, 130, 0.13);
+  --bull-soft: rgba(95, 168, 160, 0.13);
+  --warn-soft: rgba(217, 164, 65, 0.11);
+  --info-soft: rgba(123, 149, 196, 0.12);
+
+  --r-sm: 6px;
+  --r-md: 9px;
+  --r-lg: 14px;
+
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body, #root { height: 100%; }
+
+body {
+  background: var(--ground);
+  color: var(--ink);
+  font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+  font-weight: 400;
+  line-height: 1.55;
+  font-feature-settings: 'tnum' 1;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.mono { font-family: 'IBM Plex Mono', monospace; }
+
+kbd {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.78em;
+  border: 1px solid var(--line);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  padding: 1px 5px;
+  color: var(--ink-faint);
+}
+
+button { font: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+input { font: inherit; }
+a { color: var(--info); }
+
+/* ── buttons ─────────────────────────────────────────────────────── */
+.cta {
+  font-size: 15px; font-weight: 500;
+  color: #101820; background: var(--ink);
+  border-radius: 7px; padding: 12px 22px;
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.ghost {
+  font-size: 13px; color: var(--ink-dim);
+  border: 1px solid var(--line); border-radius: var(--r-sm);
+  padding: 8px 14px;
+}
+.ghost:hover { border-color: var(--ink-faint); color: var(--ink); }
+
+/* ── scrollbars ──────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 9px; height: 9px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--line); border-radius: 5px; }
+::-webkit-scrollbar-thumb:hover { background: var(--ink-faint); }
+
+/* ── shared atoms ────────────────────────────────────────────────── */
+.eyebrow {
+  font-size: 12px; font-weight: 500; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--ink-faint);
+}
+.pill {
+  font-size: 11px; padding: 2px 9px; border-radius: 11px;
+  font-weight: 500; white-space: nowrap; display: inline-block;
+}
+.pill.bull { background: var(--bull-soft); color: var(--bull); }
+.pill.bear { background: var(--bear-soft); color: var(--bear); }
+.pill.warn { background: var(--warn-soft); color: var(--warn); }
+.pill.info { background: var(--info-soft); color: var(--info); }
+.pill.flat { background: rgba(156, 175, 193, 0.12); color: var(--ink-dim); }
+
+.card {
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: var(--r-md); padding: 18px;
+}
+.micro { font-size: 11.5px; color: var(--ink-faint); line-height: 1.6; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

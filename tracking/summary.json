@@ -1,0 +1,16 @@
+{
+  "generated_at": "2026-09-08T13:48:09+00:00",
+  "tracked": 1,
+  "pending": 0,
+  "resolved": 1,
+  "categories": {
+    "okay": 0,
+    "okayish": 1,
+    "not okay": 0
+  },
+  "with_a_call": 1,
+  "abstained": 0,
+  "direction_accuracy": 0.0,
+  "mean_reward": -0.0189,
+  "note": "Direction accuracy counts only the guesses that carried a call. An abstention is neither right nor wrong, and folding it either way would flatter the number. This ledger is small \u2014 treat it as a live log, not as evidence; the held-out assessment in the README is the measured result."
+}

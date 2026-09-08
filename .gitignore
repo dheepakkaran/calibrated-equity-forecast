@@ -10,3 +10,5 @@ artifacts/
 .pytest_cache/
 .ipynb_checkpoints/
 *.egg-info/
+web/node_modules/
+web/.vite/

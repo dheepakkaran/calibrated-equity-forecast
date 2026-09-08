@@ -1,0 +1,98 @@
+# Records a guess from a GitHub issue.
+#
+# This exists so the tracking button works on a static host with no backend and
+# no secret in the browser. A token with write access cannot be shipped to a
+# web page, so the button instead opens a pre-filled issue; this workflow reads
+# it, runs the forecast server-side, appends to the ledger and closes the issue.
+# The only credential involved is the Actions token, which never leaves CI.
+name: Track a stock by issue
+
+on:
+  issues:
+    types: [opened, labeled]
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: track-request-${{ github.event.issue.number }}
+
+jobs:
+  track:
+    # Title convention: "track: SYMBOL"
+    if: startsWith(github.event.issue.title, 'track:')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install
+        run: |
+          python -m pip install --quiet --upgrade pip
+          python -m pip install --quiet -r requirements.txt
+          python -m pip install --quiet -e . --no-deps
+
+      - name: Read the symbol
+        id: sym
+        env:
+          TITLE: ${{ github.event.issue.title }}
+        run: |
+          SYM=$(printf '%s' "$TITLE" | sed -E 's/^track:[[:space:]]*//' \
+                | tr '[:lower:]' '[:upper:]' | tr -cd 'A-Z0-9&-')
+          if [ -z "$SYM" ]; then echo "no symbol in title" >&2; exit 1; fi
+          echo "symbol=$SYM" >> "$GITHUB_OUTPUT"
+
+      # The panel is a build artefact rather than a committed file, so it is
+      # rebuilt here. Ingest is ~15s and the feature build ~5s.
+      - name: Build the panel
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+        run: |
+          python scripts/postinstall_macos.py || true
+          python scripts/ingest.py
+          python scripts/build_features.py
+
+      - name: Track
+        id: track
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          python scripts/track.py "${{ steps.sym.outputs.symbol }}" \
+            --note "issue #${{ github.event.issue.number }}" | tee /tmp/out.json
+
+      - name: Commit the ledger
+        run: |
+          if git diff --quiet -- tracking/; then exit 0; fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tracking/
+          git commit -m "tracking: guess recorded for ${{ steps.sym.outputs.symbol }}"
+          git push
+
+      - name: Reply and close
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs')
+            const out = JSON.parse(fs.readFileSync('/tmp/out.json', 'utf8'))
+            const body = [
+              `Recorded a guess for **${out.tracked}**, target session \`${out.target}\`.`,
+              '',
+              `- call: \`${out.call}\``,
+              `- confidence: \`${(out.confidence * 100).toFixed(1)}%\``,
+              `- ledger now holds ${out.ledger_size} guess(es)`,
+              '',
+              'The guess is fixed now, before the outcome exists. At 09:20 IST a job',
+              'reads the opening gap for a provisional look; after the 15:30 close it',
+              'grades the call and writes the result to `tracking/predictions.json`.',
+            ].join('\n')
+            await github.rest.issues.createComment({
+              ...context.repo, issue_number: context.issue.number, body })
+            await github.rest.issues.update({
+              ...context.repo, issue_number: context.issue.number, state: 'closed' })

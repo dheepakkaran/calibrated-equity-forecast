@@ -1,0 +1,46 @@
+[
+  {
+    "id": "3d92d9b92ae2",
+    "symbol": "HINDALCO",
+    "sector": "metals",
+    "tracked_at": "2026-09-08T13:47:28+00:00",
+    "as_of_session": "2026-09-03",
+    "target_session": "2026-09-04",
+    "prediction_id": "0e27f85658ae4d97",
+    "model_version": "m3.0.0",
+    "guess": {
+      "direction": "underperform",
+      "proba_outperform": 0.4874,
+      "confidence": 0.5126,
+      "conviction": 0.01264,
+      "acted": true,
+      "regime": "normal|range",
+      "last_close": 1010.0,
+      "typical_daily_swing": 23.71
+    },
+    "note": "",
+    "status": "RESOLVED",
+    "early_read": {
+      "read_at": "2026-09-08T13:48:07+00:00",
+      "open": 1012.9,
+      "gap_pct": 0.287,
+      "market_gap_pct": 0.157,
+      "relative_gap_pct": 0.131,
+      "leaning": "against the call",
+      "note": "Provisional. The forecast is close-to-close, so the opening gap is weak evidence and settles nothing \u2014 the outcome is graded after the close."
+    },
+    "outcome": {
+      "resolved_at": "2026-09-08T13:48:09+00:00",
+      "close": 1011.0,
+      "move_pct": 0.099,
+      "market_move_pct": 0.009,
+      "relative_move_pct": 0.09,
+      "actual": "outperformed",
+      "category": "okayish",
+      "why": "Direction was wrong, but on a move too small to matter either way.",
+      "direction_hit": false,
+      "move_vs_typical_swing": 0.04,
+      "reward": -0.0189
+    }
+  }
+]

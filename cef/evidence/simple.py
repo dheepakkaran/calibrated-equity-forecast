@@ -101,6 +101,17 @@ evidence. `meaning` says what it would tell a reader if the price got there.
 11. `closing` must do three things in order: state the points that came in for \
 and against, state the resulting call, and give the percentage in plain words. \
 End on the honest note that this is a weak edge.
+12. THE DIRECTION COMES FROM `which_way_it_leans`, NOT FROM YOUR OWN READING OF \
+THE PROBABILITY. Carry that direction into the headline in ordinary sentence \
+case - never shout it in capitals. A probability of 49.9% leans towards doing \
+worse, and getting this backwards in the headline is the worst error available \
+to you.
+13. When `points_and_probability_agree` is false, say so in one plain clause \
+rather than letting the page contradict itself: the points are one model's \
+reasoning and the headline number blends four, so they can disagree. Say it \
+once, in your own words - do not paste `what_the_points_are` in verbatim and \
+do not repeat the point twice in the same paragraph. Never present a positive \
+points total as though it supported a downward call.
 
 Tone: calm, direct, quietly honest about how little is known. The reader should \
 finish understanding both what the model thinks and why that is weak evidence.
@@ -264,10 +275,29 @@ def build_evidence(forecast: dict, attribution: list[dict], drivers: list[dict],
         "call": ("no call — the model is not confident enough to take a side" if not acted
                  else "expected to do better than the pack" if up
                  else "expected to do worse than the pack"),
+        # Stated rather than left to be worked out from the probability. An
+        # earlier version gave only `probability_it_outperforms_pct: 49.9` and
+        # the headline came back as "slightly more likely to do better" - the
+        # wrong way round, in the most-read sentence on the page.
+        "which_way_it_leans": ("towards doing worse than the pack" if not up
+                               else "towards doing better than the pack"),
+        "lean_is_this_slight": ("so slight that the model refuses to act on it"
+                                if not acted else "small but past the acting threshold"),
         "confidence_pct": round(f["confidence"] * 100, 1),
         "probability_it_outperforms_pct": round(f["proba_outperform"] * 100, 1),
         "distance_from_coin_toss_pp": round(f["conviction"] * 100, 2),
         "threshold_needed_to_commit_pp": round(f["abstain_threshold"] * 100, 1),
+        # The points and the probability come from different places, and when
+        # their signs disagree the page must say so rather than read as a
+        # contradiction. Points are the gradient-boosted model's own
+        # attribution; the headline probability is a bandit-weighted blend of
+        # four models, so the boosted model can lean one way while the blend
+        # settles the other.
+        "what_the_points_are": (
+            "The points are the gradient-boosted model's own attribution. The "
+            "headline probability blends four models, so the points and the "
+            "probability can point opposite ways."),
+        "points_and_probability_agree": (up_pts + dn_pts > 0) == up,
         "tally": {
             "points_pushing_up": up_pts,
             "points_pulling_down": dn_pts,
