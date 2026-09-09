@@ -63,8 +63,20 @@
       "typical_daily_swing": 18.53
     },
     "note": "issue #1",
-    "status": "PENDING",
+    "status": "RESOLVED",
     "early_read": null,
-    "outcome": null
+    "outcome": {
+      "resolved_at": "2026-09-09T14:33:08+00:00",
+      "close": 601.0,
+      "move_pct": 2.22,
+      "market_move_pct": 0.009,
+      "relative_move_pct": 2.21,
+      "actual": "outperformed",
+      "category": "okayish",
+      "why": "Declined to call it and the share did move. Nothing was lost, but nothing was caught either.",
+      "direction_hit": null,
+      "move_vs_typical_swing": 0.7,
+      "reward": 0.0
+    }
   }
 ]
