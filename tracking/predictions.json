@@ -42,5 +42,29 @@
       "move_vs_typical_swing": 0.04,
       "reward": -0.0189
     }
+  },
+  {
+    "id": "bfae570d9c1b",
+    "symbol": "HINDZINC",
+    "sector": "metals",
+    "tracked_at": "2026-09-09T14:10:57+00:00",
+    "as_of_session": "2026-09-03",
+    "target_session": "2026-09-04",
+    "prediction_id": "ba55570af43d4936",
+    "model_version": "m3.0.0",
+    "guess": {
+      "direction": "abstain",
+      "proba_outperform": 0.5054,
+      "confidence": 0.5054,
+      "conviction": 0.00539,
+      "acted": false,
+      "regime": "elevated|range",
+      "last_close": 587.95,
+      "typical_daily_swing": 18.53
+    },
+    "note": "issue #1",
+    "status": "PENDING",
+    "early_read": null,
+    "outcome": null
   }
 ]
