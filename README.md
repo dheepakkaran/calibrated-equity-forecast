@@ -466,13 +466,24 @@ commit is the strongest cheap proof that the claim predates the result, and
 neither the timestamp nor the content can be quietly edited without it showing
 in a diff.
 
-Resolution runs twice, because a close-to-close forecast cannot honestly be
-graded at the opening bell:
+Resolution runs once, after the close, at 15:45 IST.
 
-| when | what | status |
-|---|---|---|
-| 09:20 IST | reads the opening gap | **provisional** — settles nothing, and says so |
-| 15:45 IST | grades the close-to-close outcome | **final** |
+It used to run twice — a 09:20 IST pass read the opening gap and was labelled
+provisional. That was removed after the first live cron fired **4.5 hours
+late**: GitHub's scheduler is best-effort, and a "gap read" taken at 13:53 IST,
+four hours into the session, describes nothing.
+
+The evening pass does not have that failure mode, and the reason is worth
+stating because it is the whole argument for the change: the closing price
+stops changing at 15:30, so a job that reads it is equally correct whether it
+starts at 15:45 or at midnight. **Late does not mean wrong when the number has
+settled.** Dropping the morning pass lost nothing measurable — it never
+produced a verdict — and removed the one piece of the loop whose correctness
+depended on GitHub being punctual.
+
+Rows written before the change still carry their `early_read`, and it is still
+displayed. Deleting it would be rewriting the record, which is the one thing
+this ledger exists not to do.
 
 Each resolved guess gets a category and the two numbers a reader is owed — was
 the direction right, and did the share move enough for that to mean anything:
@@ -488,17 +499,28 @@ typical daily swing, so a ₹500 stock and a ₹5,000 one are judged on the same
 scale. A move under 0.25× that swing is noise: being right about noise is luck
 and being wrong about it costs nothing, so both land in the middle.
 
-A worked example from the live ledger:
+Two worked examples from the live ledger, both graded by the workflow rather
+than by hand:
 
 ```
 HINDALCO   said: will lag, 51.3% confident
-09:20      gap +0.29% vs market +0.16%   →  leaning against the call
-15:45      relative move +0.09%  =  0.04 × its typical swing
+           relative move +0.09%  =  0.04 × its typical swing
            →  okayish · direction wrong · reward −0.019
               "Direction was wrong, but on a move too small to matter either way."
+
+HINDZINC   said: no call, 50.5% — inside the coin-flip band
+           relative move +2.21%  =  0.70 × its typical swing
+           →  okayish · abstained · reward +0.000
+              "Declined to call it and the share did move. Nothing was lost,
+               but nothing was caught either."
 ```
 
-Two workflows drive it. `resolve-tracked.yml` runs the two crons and commits
+The second is the case an accuracy figure cannot express. The system was right
+to be unsure and still missed a real move; grading it as neither a hit nor a
+miss is the only honest option, and an abstention earning exactly zero reward
+is what stops the model from farming a good record by never committing.
+
+Two workflows drive it. `resolve-tracked.yml` runs the evening cron and commits
 the ledger back. `track-request.yml` exists so the button works on a static
 host with no backend: a write token cannot be shipped to a web page, so the
 button opens a pre-filled issue, and an Action reads the title, runs the

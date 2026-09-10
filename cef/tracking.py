@@ -6,15 +6,20 @@ commit is the strongest cheap proof of that available — the timestamp and the
 content are both in the history, and neither can be quietly edited later
 without it showing up in a diff.
 
-Resolution happens twice, because a next-session close-to-close forecast cannot
-honestly be graded at the opening bell:
+Resolution happens once, after the Indian close. Each resolved guess gets a
+category and two numbers, which is what a reader needs to judge it: was the
+direction right, and did the share move enough for that to mean anything.
 
-    09:20 IST  early read   the gap only. Provisional, and labelled as such.
-    15:45 IST  resolved     the actual close-to-close outcome. Final.
+An earlier version also wrote a 09:20 IST "early read" from the opening gap,
+labelled provisional. It was dropped: GitHub's scheduler is best-effort and
+fired it 4.5 hours late, and a gap read taken four hours into the session
+describes nothing. The evening pass has no such problem, because the closing
+price stops changing at 15:30 — reading it late still reads it correctly.
 
-Each resolved guess gets a category and two numbers, which is what a reader
-needs to judge it: was the direction right, and did the share move enough for
-that to mean anything.
+Rows written before that change still carry an ``early_read`` field and an
+``EARLY_READ`` status. Both are still read and displayed; they are simply no
+longer produced. Deleting them would be rewriting the record, which is the one
+thing this ledger exists not to do.
 """
 from __future__ import annotations
 
@@ -122,34 +127,9 @@ def categorise(direction_hit: bool | None, move_vs_typical: float,
     return "not okay", "Called the direction wrong on a move that mattered."
 
 
-def early_read(row: dict, open_px: float, prev_close: float,
-               market_open_move_pct: float) -> dict:
-    """The 09:20 IST provisional read, from the opening gap only.
-
-    Explicitly not a verdict. The forecast is close-to-close and the closing
-    price does not exist yet; a gap agreeing with the call is weak evidence and
-    is labelled that way.
-    """
-    gap_pct = (open_px / prev_close - 1) * 100
-    rel_gap = gap_pct - market_open_move_pct
-    called_up = row["guess"]["proba_outperform"] > 0.5
-    leaning = "with the call" if (rel_gap > 0) == called_up else "against the call"
-    return {
-        "read_at": _now(),
-        "open": round(open_px, 2),
-        "gap_pct": round(gap_pct, 3),
-        "market_gap_pct": round(market_open_move_pct, 3),
-        "relative_gap_pct": round(rel_gap, 3),
-        "leaning": leaning,
-        "note": ("Provisional. The forecast is close-to-close, so the opening gap "
-                 "is weak evidence and settles nothing — the outcome is graded "
-                 "after the close."),
-    }
-
-
 def resolve(row: dict, close_px: float, prev_close: float,
             market_close_move_pct: float) -> dict:
-    """The 15:45 IST final resolution."""
+    """The final resolution, from the close."""
     from cef.feedback.reward import continuous_reward
 
     move_pct = (close_px / prev_close - 1) * 100

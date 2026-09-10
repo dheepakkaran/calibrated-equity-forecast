@@ -1,15 +1,17 @@
 #!/usr/bin/env python
 """Resolve tracked guesses against what the market actually did.
 
-Two modes, matching the two crons:
+Runs once a day, after the Indian close. Fetches the closes and grades each
+pending guess into okay / okayish / not okay with its two numbers.
 
-    --mode early     09:20 IST. Fetches the opening prices and writes a
-                     provisional read from the gap. Settles nothing, and says so.
-    --mode resolved  15:45 IST. Fetches the closes and grades the guess into
-                     okay / okayish / not okay with its two numbers.
+An earlier version also had a 09:20 IST mode that read the opening gap. It was
+removed because GitHub's scheduler is best-effort and fired it 4.5 hours late,
+by which point a "gap read" described nothing. This job is immune to that: the
+closing price stops changing at 15:30 IST, so reading it late still reads it
+correctly.
 
 Prices come from Yahoo Finance at run time. The market-relative move is taken
-against the median of the tracked universe on the same day, which is the same
+against the median of the whole universe on the same day, which is the
 definition the model was trained on — grading against a different benchmark
 than the one it was fitted to would be meaningless.
 """
@@ -56,21 +58,20 @@ def fetch(symbols: list[str], session: str) -> pd.DataFrame:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--mode", choices=["early", "resolved"], required=True)
     ap.add_argument("--session", default=None,
                     help="target session to resolve; defaults to every pending one")
     args = ap.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(message)s")
-    from cef.tracking import early_read, load, resolve, save, summarise
+    from cef.tracking import load, resolve, save, summarise
 
     rows = load()
-    want = "PENDING" if args.mode == "early" else ("PENDING", "EARLY_READ")
+    # EARLY_READ is a status only historical rows carry; it is still resolvable.
     todo = [r for r in rows
-            if (r["status"] == want if isinstance(want, str) else r["status"] in want)
+            if r["status"] in ("PENDING", "EARLY_READ")
             and (args.session is None or r["target_session"] == args.session)]
     if not todo:
-        log.info("nothing to %s", args.mode)
+        log.info("nothing to resolve")
         summarise(rows)
         return 0
 
@@ -103,21 +104,13 @@ def main() -> int:
         prev_close = float(prev[r["symbol"]])
 
         joined = day.set_index("symbol").join(prev.rename("prev"), how="inner")
-        if args.mode == "early":
-            mkt = float(np.nanmedian(joined["open"] / joined["prev"] - 1) * 100)
-            r["early_read"] = early_read(r, float(me["open"].iloc[0]), prev_close, mkt)
-            r["status"] = "EARLY_READ"
-            log.info("%-12s early read: gap %+.2f%% vs market %+.2f%% -> %s",
-                     r["symbol"], r["early_read"]["gap_pct"], mkt,
-                     r["early_read"]["leaning"])
-        else:
-            mkt = float(np.nanmedian(joined["close"] / joined["prev"] - 1) * 100)
-            r["outcome"] = resolve(r, float(me["close"].iloc[0]), prev_close, mkt)
-            r["status"] = "RESOLVED"
-            o = r["outcome"]
-            log.info("%-12s %-9s rel %+.2f%% (%.2f x typical swing) reward %+.3f",
-                     r["symbol"], o["category"], o["relative_move_pct"],
-                     o["move_vs_typical_swing"], o["reward"])
+        mkt = float(np.nanmedian(joined["close"] / joined["prev"] - 1) * 100)
+        r["outcome"] = resolve(r, float(me["close"].iloc[0]), prev_close, mkt)
+        r["status"] = "RESOLVED"
+        o = r["outcome"]
+        log.info("%-12s %-9s rel %+.2f%% (%.2f x typical swing) reward %+.3f",
+                 r["symbol"], o["category"], o["relative_move_pct"],
+                 o["move_vs_typical_swing"], o["reward"])
         changed += 1
 
     save(rows)

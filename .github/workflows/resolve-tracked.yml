@@ -1,10 +1,17 @@
 # Grades tracked guesses against what the market actually did.
 #
-# Two runs, because a next-session close-to-close forecast cannot honestly be
-# graded at the opening bell:
+# One run a day, after the Indian close:
 #
-#   03:50 UTC = 09:20 IST   early read — the opening gap only, provisional
-#   10:15 UTC = 10:15+5:30 = 15:45 IST   resolved — the real outcome, final
+#   10:15 UTC = 15:45 IST
+#
+# There used to be a second run at 09:20 IST that read the opening gap. It was
+# dropped, and the reason is worth recording: GitHub's scheduler is best-effort,
+# and on 2026-09-09 this workflow fired 4.5 hours late. A gap read at 13:53 IST
+# describes nothing — the market had been open for four hours.
+#
+# This run does not have that problem. The closing price stops changing at
+# 15:30 IST, so a job that reads it is equally correct whether it starts at
+# 15:45 or at midnight. Late does not mean wrong when the number has settled.
 #
 # Weekdays only. Indian exchange holidays are handled by the resolver itself:
 # a session with no printed price is left pending rather than graded against
@@ -13,16 +20,8 @@ name: Resolve tracked guesses
 
 on:
   schedule:
-    - cron: '50 3 * * 1-5'    # 09:20 IST — early read
-    - cron: '15 10 * * 1-5'   # 15:45 IST — resolved
+    - cron: '15 10 * * 1-5'   # 15:45 IST, after the close
   workflow_dispatch:
-    inputs:
-      mode:
-        description: 'early or resolved'
-        required: true
-        default: resolved
-        type: choice
-        options: [early, resolved]
 
 permissions:
   contents: write
@@ -42,28 +41,16 @@ jobs:
           python-version: '3.11'
           cache: pip
 
-      # Only what the resolver needs. Installing the full requirements file
-      # would pull LightGBM, SHAP and torch for a job that does arithmetic on
-      # two prices.
+      # Only what the resolver needs. It does arithmetic on two prices, so
+      # installing the modelling stack would be minutes of wasted runner time.
       - name: Install
         run: |
           python -m pip install --quiet --upgrade pip
           python -m pip install --quiet yfinance pandas numpy python-dotenv
           python -m pip install --quiet -e . --no-deps
 
-      - name: Pick the mode
-        id: mode
-        run: |
-          if [ -n "${{ inputs.mode }}" ]; then
-            echo "mode=${{ inputs.mode }}" >> "$GITHUB_OUTPUT"
-          elif [ "${{ github.event.schedule }}" = "50 3 * * 1-5" ]; then
-            echo "mode=early" >> "$GITHUB_OUTPUT"
-          else
-            echo "mode=resolved" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Resolve
-        run: python scripts/resolve_tracked.py --mode "${{ steps.mode.outputs.mode }}"
+        run: python scripts/resolve_tracked.py
 
       - name: Commit the ledger
         run: |
@@ -74,12 +61,12 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add tracking/
-          git commit -m "tracking: ${{ steps.mode.outputs.mode }} pass for $(date -u +%Y-%m-%d)"
+          git commit -m "tracking: resolved $(date -u +%Y-%m-%d)"
           git push
 
       - name: Summary
         run: |
-          echo "### Tracking — ${{ steps.mode.outputs.mode }} pass" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Tracking" >> "$GITHUB_STEP_SUMMARY"
           echo '```json' >> "$GITHUB_STEP_SUMMARY"
           cat tracking/summary.json >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
