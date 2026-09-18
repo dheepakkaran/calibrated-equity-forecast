@@ -78,5 +78,125 @@
       "move_vs_typical_swing": 0.7,
       "reward": 0.0
     }
+  },
+  {
+    "id": "0ef22667ba2a",
+    "symbol": "HINDALCO",
+    "sector": "metals",
+    "tracked_at": "2026-09-18T19:48:37+00:00",
+    "as_of_session": "2026-09-15",
+    "target_session": "2026-09-16",
+    "prediction_id": "6d81fc430525487e",
+    "model_version": "m3.0.0",
+    "guess": {
+      "direction": "abstain",
+      "proba_outperform": 0.5009,
+      "confidence": 0.5009,
+      "conviction": 0.00087,
+      "acted": false,
+      "regime": "normal|range",
+      "last_close": 958.7,
+      "typical_daily_swing": 23.58
+    },
+    "note": "cron verification test",
+    "status": "PENDING",
+    "early_read": null,
+    "outcome": null
+  },
+  {
+    "id": "95e959ac97fa",
+    "symbol": "INFY",
+    "sector": "it",
+    "tracked_at": "2026-09-18T19:48:41+00:00",
+    "as_of_session": "2026-09-16",
+    "target_session": "2026-09-17",
+    "prediction_id": "ee1a8128e7504940",
+    "model_version": "m3.0.0",
+    "guess": {
+      "direction": "underperform",
+      "proba_outperform": 0.4891,
+      "confidence": 0.5109,
+      "conviction": 0.01094,
+      "acted": true,
+      "regime": "normal|range",
+      "last_close": 1060.0,
+      "typical_daily_swing": 30.61
+    },
+    "note": "cron verification test",
+    "status": "PENDING",
+    "early_read": null,
+    "outcome": null
+  },
+  {
+    "id": "217b0c122239",
+    "symbol": "HDFCBANK",
+    "sector": "bank",
+    "tracked_at": "2026-09-18T19:48:45+00:00",
+    "as_of_session": "2026-09-16",
+    "target_session": "2026-09-17",
+    "prediction_id": "6131116d11fd46b8",
+    "model_version": "m3.0.0",
+    "guess": {
+      "direction": "underperform",
+      "proba_outperform": 0.486,
+      "confidence": 0.514,
+      "conviction": 0.01396,
+      "acted": true,
+      "regime": "normal|range",
+      "last_close": 721.5,
+      "typical_daily_swing": 13.48
+    },
+    "note": "cron verification test",
+    "status": "PENDING",
+    "early_read": null,
+    "outcome": null
+  },
+  {
+    "id": "015b584f24aa",
+    "symbol": "TATASTEEL",
+    "sector": "metals",
+    "tracked_at": "2026-09-18T19:48:48+00:00",
+    "as_of_session": "2026-09-16",
+    "target_session": "2026-09-17",
+    "prediction_id": "393d44806b2640a7",
+    "model_version": "m3.0.0",
+    "guess": {
+      "direction": "abstain",
+      "proba_outperform": 0.4968,
+      "confidence": 0.5032,
+      "conviction": 0.00315,
+      "acted": false,
+      "regime": "elevated|range",
+      "last_close": 183.0,
+      "typical_daily_swing": 4.6
+    },
+    "note": "cron verification test",
+    "status": "PENDING",
+    "early_read": null,
+    "outcome": null
+  },
+  {
+    "id": "c0918915bec5",
+    "symbol": "TITAN",
+    "sector": "consumer",
+    "tracked_at": "2026-09-18T19:48:52+00:00",
+    "as_of_session": "2026-09-16",
+    "target_session": "2026-09-17",
+    "prediction_id": "bd5832f125214bde",
+    "model_version": "m3.0.0",
+    "guess": {
+      "direction": "underperform",
+      "proba_outperform": 0.49,
+      "confidence": 0.51,
+      "conviction": 0.01004,
+      "acted": true,
+      "regime": "normal|trend_down",
+      "last_close": 4908.5,
+      "typical_daily_swing": 81.17
+    },
+    "note": "cron verification test",
+    "status": "PENDING",
+    "early_read": null,
+    "outcome": null
   }
 ]

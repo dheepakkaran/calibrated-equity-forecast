@@ -189,6 +189,20 @@ def summarise(rows: list[dict] | None = None) -> dict:
                  "a live log, not as evidence; the held-out assessment in the "
                  "README is the measured result."),
     }
+    # Only rewrite when something other than the clock has changed. The
+    # nightly job runs whether or not anything is pending, and an unconditional
+    # write meant a fresh `generated_at` every day — which made `git diff`
+    # dirty, which made the workflow commit, which put one empty commit a day
+    # into the history forever. Eight of them accumulated before this was
+    # noticed.
     SUMMARY.parent.mkdir(exist_ok=True, parents=True)
+    if SUMMARY.exists():
+        try:
+            prev = json.loads(SUMMARY.read_text())
+            if {k: v for k, v in prev.items() if k != "generated_at"} == \
+               {k: v for k, v in out.items() if k != "generated_at"}:
+                return prev
+        except json.JSONDecodeError:
+            pass
     SUMMARY.write_text(json.dumps(out, indent=2) + "\n")
     return out

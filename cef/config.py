@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -20,7 +20,23 @@ for _d in (DATA_DIR, ARTIFACT_DIR):
 
 # --- data window -------------------------------------------------------------
 HISTORY_START = date(2018, 1, 1)
-HISTORY_END = date(2026, 9, 6)
+
+def _history_end() -> date:
+    """Ingest up to and including today.
+
+    This was a frozen literal, and the failure mode it caused is the quiet
+    kind: the system kept forecasting "the next session" against a panel that
+    had stopped twelve days earlier, reported nothing wrong, and would have
+    gone on doing that indefinitely. A date that has to be edited by hand to
+    keep a daily system current is a date that will not be edited.
+
+    yfinance treats `end` as exclusive, so tomorrow is passed to include
+    today's close once it has printed.
+    """
+    return date.today() + timedelta(days=1)
+
+
+HISTORY_END = _history_end()
 
 # --- API keys (optional at ingest time; each source degrades gracefully) -----
 FRED_API_KEY = os.getenv("FRED_API_KEY", "")
