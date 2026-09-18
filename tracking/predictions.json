@@ -99,9 +99,21 @@
       "typical_daily_swing": 23.58
     },
     "note": "cron verification test",
-    "status": "PENDING",
+    "status": "RESOLVED",
     "early_read": null,
-    "outcome": null
+    "outcome": {
+      "resolved_at": "2026-09-18T20:06:44+00:00",
+      "close": 972.7,
+      "move_pct": 1.46,
+      "market_move_pct": 0.565,
+      "relative_move_pct": 0.896,
+      "actual": "outperformed",
+      "category": "okayish",
+      "why": "Declined to call it and the share did move. Nothing was lost, but nothing was caught either.",
+      "direction_hit": null,
+      "move_vs_typical_swing": 0.36,
+      "reward": 0.0
+    }
   },
   {
     "id": "95e959ac97fa",
@@ -123,9 +135,21 @@
       "typical_daily_swing": 30.61
     },
     "note": "cron verification test",
-    "status": "PENDING",
+    "status": "RESOLVED",
     "early_read": null,
-    "outcome": null
+    "outcome": {
+      "resolved_at": "2026-09-18T20:06:44+00:00",
+      "close": 1058.6,
+      "move_pct": -0.132,
+      "market_move_pct": 0.598,
+      "relative_move_pct": -0.73,
+      "actual": "lagged",
+      "category": "okay",
+      "why": "Called the direction correctly on a move that mattered.",
+      "direction_hit": true,
+      "move_vs_typical_swing": -0.25,
+      "reward": 0.0109
+    }
   },
   {
     "id": "217b0c122239",
@@ -147,9 +171,21 @@
       "typical_daily_swing": 13.48
     },
     "note": "cron verification test",
-    "status": "PENDING",
+    "status": "RESOLVED",
     "early_read": null,
-    "outcome": null
+    "outcome": {
+      "resolved_at": "2026-09-18T20:06:44+00:00",
+      "close": 713.0,
+      "move_pct": -1.178,
+      "market_move_pct": 0.598,
+      "relative_move_pct": -1.776,
+      "actual": "lagged",
+      "category": "okay",
+      "why": "Called the direction correctly on a move that mattered.",
+      "direction_hit": true,
+      "move_vs_typical_swing": -0.95,
+      "reward": 0.014
+    }
   },
   {
     "id": "015b584f24aa",
@@ -171,9 +207,21 @@
       "typical_daily_swing": 4.6
     },
     "note": "cron verification test",
-    "status": "PENDING",
+    "status": "RESOLVED",
     "early_read": null,
-    "outcome": null
+    "outcome": {
+      "resolved_at": "2026-09-18T20:06:44+00:00",
+      "close": 187.29,
+      "move_pct": 2.344,
+      "market_move_pct": 0.598,
+      "relative_move_pct": 1.746,
+      "actual": "outperformed",
+      "category": "okayish",
+      "why": "Declined to call it and the share did move. Nothing was lost, but nothing was caught either.",
+      "direction_hit": null,
+      "move_vs_typical_swing": 0.69,
+      "reward": 0.0
+    }
   },
   {
     "id": "c0918915bec5",
@@ -195,8 +243,20 @@
       "typical_daily_swing": 81.17
     },
     "note": "cron verification test",
-    "status": "PENDING",
+    "status": "RESOLVED",
     "early_read": null,
-    "outcome": null
+    "outcome": {
+      "resolved_at": "2026-09-18T20:06:44+00:00",
+      "close": 4841.0,
+      "move_pct": -1.375,
+      "market_move_pct": 0.598,
+      "relative_move_pct": -1.973,
+      "actual": "lagged",
+      "category": "okay",
+      "why": "Called the direction correctly on a move that mattered.",
+      "direction_hit": true,
+      "move_vs_typical_swing": -1.19,
+      "reward": 0.01
+    }
   }
 ]
